@@ -8,14 +8,14 @@ MindSpace is a free, anonymous mental health platform designed for Ugandan youth
 
 ## 📋 Features
 
-| Feature | Description |
-|---|---|
-| 😊 **Mood Tracker** | Daily emoji-based check-in with optional journal note |
-| 📊 **Dashboard** | 7-day mood history table + bar chart (Chart.js) |
-| 🤝 **Community Board** | Anonymous peer support posts (latest 20) |
-| 📚 **Resources** | Ugandan helplines, coping tips for anxiety/stress/depression |
-| 🔒 **Auth** | Secure registration & login with bcrypt password hashing |
-| 🛡️ **Admin Panel** | Site-wide stats: users, check-ins, top mood, breakdown chart |
+| Feature                     | Description                                                  |
+| --------------------------- | ------------------------------------------------------------ |
+| 😊**Mood Tracker**    | Daily emoji-based check-in with optional journal note        |
+| 📊**Dashboard**       | 7-day mood history table + bar chart (Chart.js)              |
+| 🤝**Community Board** | Anonymous peer support posts (latest 20)                     |
+| 📚**Resources**       | Ugandan helplines, coping tips for anxiety/stress/depression |
+| 🔒**Auth**            | Secure registration & login with bcrypt password hashing     |
+| 🛡️**Admin Panel**   | Site-wide stats: users, check-ins, top mood, breakdown chart |
 
 ---
 
@@ -89,28 +89,28 @@ define('DB_PASS', '');        // Leave empty for default XAMPP
 Open your browser and visit:
 
 ```
-http://localhost/mindspace/
+http://localhost/mindspace-ug/
 ```
 
 ### 5. Demo account
 
-| Field | Value |
-|---|---|
-| Email | `demo@mindspaceug.com` |
-| Password | `password123` |
+| Field    | Value                    |
+| -------- | ------------------------ |
+| Email    | `demo@mindspaceug.com` |
+| Password | `password123`          |
 
 ---
 
 ## 🎨 Design System
 
-| Token | Value | Usage |
-|---|---|---|
-| Primary green | `#4CAF50` | CTAs, borders, headings |
-| Accent yellow | `#FFD54F` / `#FFF9C4` | Highlights, warnings |
-| Calm blue | `#42A5F5` / `#E3F2FD` | Info, backgrounds |
-| Dark text | `#2d3436` | Body copy |
-| Muted text | `#636e72` | Subtitles, labels |
-| Font | Poppins (Google Fonts) | All text |
+| Token         | Value                     | Usage                   |
+| ------------- | ------------------------- | ----------------------- |
+| Primary green | `#4CAF50`               | CTAs, borders, headings |
+| Accent yellow | `#FFD54F` / `#FFF9C4` | Highlights, warnings    |
+| Calm blue     | `#42A5F5` / `#E3F2FD` | Info, backgrounds       |
+| Dark text     | `#2d3436`               | Body copy               |
+| Muted text    | `#636e72`               | Subtitles, labels       |
+| Font          | Poppins (Google Fonts)    | All text                |
 
 ---
 
@@ -123,6 +123,7 @@ http://localhost/mindspace/
 - Community posts strip executable content at display time
 
 > **Production checklist before going live:**
+>
 > - Add admin login to protect `admin/`
 > - Enable HTTPS (SSL certificate)
 > - Set `display_errors = Off` in `php.ini`
@@ -132,12 +133,12 @@ http://localhost/mindspace/
 
 ## 📞 Crisis Resources (Uganda)
 
-| Organisation | Number |
-|---|---|
-| Befrienders Uganda | **0800 21 21 21** (Toll-free, 24/7) |
-| Mental Health Uganda | +256 414 270 050 |
-| Uganda Emergency | 999 / 112 |
-| Butabika Hospital | +256 312 117 200 |
+| Organisation         | Number                                    |
+| -------------------- | ----------------------------------------- |
+| Befrienders Uganda   | **0800 21 21 21** (Toll-free, 24/7) |
+| Mental Health Uganda | +256 414 270 050                          |
+| Uganda Emergency     | 999 / 112                                 |
+| Butabika Hospital    | +256 312 117 200                          |
 
 ---
 
