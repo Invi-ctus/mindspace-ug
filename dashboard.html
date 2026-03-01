@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Dashboard – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js from CDN for the mood bar chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="brand-leaf"><i class="fa-solid fa-leaf"></i></div>
+        MindSpace
+      </a>
+      <nav class="navbar-nav" id="navMenu">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="checkin.html">Check-In</a>
+        <a href="community.html">Community</a>
+        <a href="resources.html">Resources</a>
+        <a href="php/logout.php">Logout</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD HEADER BAND -->
+  <div class="dashboard-header">
+    <div class="container">
+      <h1 id="welcomeMsg">Loading…</h1>
+      <p id="welcomeSub">Here is a summary of your mental wellness journey.</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container" style="padding-bottom:3rem;">
+
+      <!-- Welcome alert for new registrations -->
+      <div id="welcomeAlert"></div>
+
+      <!-- ── Stats row ── -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-number" id="statTotal">–</div>
+          <div class="stat-label">Total Check-Ins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statStreak">–</div>
+          <div class="stat-label"><i class="fa-solid fa-fire" style="color:#FF8F00;"></i> Day Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statTopMood">–</div>
+          <div class="stat-label">Top Mood This Week</div>
+        </div>
+        <div class="stat-card" style="background:#4CAF50; color:#fff;">
+          <a href="checkin.html" class="btn btn-yellow btn-sm" style="margin-top:0.3rem;">
+            <i class="fa-solid fa-plus"></i> Check In Today
+          </a>
+          <div class="stat-label" style="color:#fff; margin-top:0.4rem;">Start today's entry</div>
+        </div>
+      </div>
+
+      <!-- ── Mood bar chart ── -->
+      <div class="chart-wrapper" id="chartWrapper">
+        <h3><i class="fa-solid fa-chart-bar" style="color:#2E7D32;"></i> Mood Frequency — Last 7 Days</h3>
+        <div id="chartContainer" style="max-height:280px;">
+          <span class="spinner" id="chartSpinner"></span>
+        </div>
+        <canvas id="moodChart" style="display:none; max-height:260px;"></canvas>
+      </div>
+
+      <!-- ── Recent mood history table ── -->
+      <div class="chart-wrapper">
+        <h3><i class="fa-solid fa-calendar-days" style="color:#2E7D32;"></i> Recent Mood History</h3>
+
+        <!-- Spinner while loading -->
+        <span class="spinner" id="tableSpinner"></span>
+
+        <!-- Table (hidden until data loads) -->
+        <div id="moodTableWrapper" style="display:none; overflow-x:auto;">
+          <table class="data-table" id="moodTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date &amp; Time</th>
+                <th>Mood</th>
+                <th>Journal Note</th>
+              </tr>
+            </thead>
+            <tbody id="moodTableBody">
+              <!-- Rows injected by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state (shown if no entries yet) -->
+        <div id="emptyState" class="empty-state" style="display:none;">
+          <i class="fa-solid fa-inbox empty-icon" style="font-size:3rem; color:#b2bec3;"></i>
+          <p>No check-ins yet. <a href="checkin.html">Start your first one!</a></p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    // ── Emoji & label maps ─────────────────────────────────────
+    const moodEmoji = {
+      happy:      '😊',
+      neutral:    '😐',
+      sad:        '😔',
+      frustrated: '😤',
+      anxious:    '😰'
+    };
+    const moodLabel = {
+      happy:      'Happy',
+      neutral:    'Neutral',
+      sad:        'Sad',
+      frustrated: 'Frustrated',
+      anxious:    'Anxious'
+    };
+
+    // ── Format a MySQL datetime to a readable string ───────────
+    function formatDate(dtStr) {
+      if (!dtStr) return '–';
+      const d = new Date(dtStr.replace(' ', 'T')); // Safari fix
+      return d.toLocaleDateString('en-UG', {
+        weekday: 'short', year: 'numeric',
+        month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // ── Welcome alert for new users ────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('welcome')) {
+      document.getElementById('welcomeAlert').innerHTML =
+        `<div class="alert alert-success">
+           <i class="fa-solid fa-party-horn"></i> Welcome to MindSpace! Your account is ready. Start by completing today's check-in.
+         </div>`;
+    }
+
+    // ── Fetch dashboard data from PHP API ──────────────────────
+    async function loadDashboard() {
+      try {
+        const res  = await fetch('php/dashboard_data.php');
+        const data = await res.json();
+
+        // Redirect to login if not authenticated
+        if (!data.success && data.redirect) {
+          window.location.href = data.redirect;
+          return;
+        }
+
+        if (!data.success) throw new Error('Failed to load data');
+
+        // ── Welcome message ─────────────────────────────────
+        document.getElementById('welcomeMsg').textContent =
+          `Welcome back, ${data.username}`;
+
+        // ── Stats ───────────────────────────────────────────
+        document.getElementById('statTotal').textContent  = data.stats.total;
+        document.getElementById('statStreak').textContent = data.stats.streak;
+        const topMoodKey = data.stats.topMood;
+        document.getElementById('statTopMood').textContent =
+          topMoodKey !== 'N/A'
+            ? `${moodEmoji[topMoodKey] || ''} ${moodLabel[topMoodKey] || topMoodKey}`
+            : 'N/A';
+
+        // ── Chart ───────────────────────────────────────────
+        buildChart(data.moodCounts);
+
+        // ── Mood table ──────────────────────────────────────
+        buildTable(data.recent);
+
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        document.getElementById('welcomeMsg').textContent = 'Dashboard';
+        document.getElementById('welcomeSub').textContent =
+          'Could not load data. Make sure you are logged in and the server is running.';
+      }
+    }
+
+    function buildChart(moodCounts) {
+      document.getElementById('chartSpinner').style.display = 'none';
+      const canvas = document.getElementById('moodChart');
+      canvas.style.display = 'block';
+
+      const labels = ['😊 Happy', '😐 Neutral', '😔 Sad', '😤 Frustrated', '😰 Anxious'];
+      const values = [
+        moodCounts.happy, moodCounts.neutral,
+        moodCounts.sad,   moodCounts.frustrated,
+        moodCounts.anxious
+      ];
+      const colors = ['#4CAF50', '#FFD54F', '#42A5F5', '#ef5350', '#AB47BC'];
+
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Check-ins this week',
+            data: values,
+            backgroundColor: colors,
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.parsed.y} check-in(s)`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, font: { family: 'Poppins' } },
+              grid: { color: '#f0f0f0' }
+            },
+            x: {
+              ticks: { font: { family: 'Poppins', size: 13 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    function buildTable(entries) {
+      document.getElementById('tableSpinner').style.display = 'none';
+
+      if (!entries || entries.length === 0) {
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+
+      const tbody = document.getElementById('moodTableBody');
+      tbody.innerHTML = entries.map((entry, i) => {
+        const badgeClass = `mood-badge mood-${entry.mood}`;
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${formatDate(entry.created_at)}</td>
+            <td>
+              <span class="${badgeClass}">
+                ${moodEmoji[entry.mood] || ''} ${moodLabel[entry.mood] || entry.mood}
+              </span>
+            </td>
+            <td style="color:#636e72; max-width:260px; word-break:break-word;">
+              ${entry.note ? entry.note : '<span style="color:#ccc;">No note</span>'}
+            </td>
+          </tr>`;
+      }).join('');
+
+      document.getElementById('moodTableWrapper').style.display = 'block';
+    }
+
+    // ── Kick it off ────────────────────────────────────────────
+    loadDashboard();
+  </script>
+</body>
+</html>

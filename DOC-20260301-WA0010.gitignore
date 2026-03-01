@@ -1,0 +1,51 @@
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+.env.local
+.env.*.local
+
+# PHP
+vendor/
+composer.lock
+
+# Database
+*.sql.bak
+database/*.sql.bak
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS-specific
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+
+# Local configuration (if using local configs)
+config.local.php
+db.local.php
+
+# Node modules (if adding Node later)
+node_modules/
+package-lock.json
+
+# Build artifacts
+dist/
+build/

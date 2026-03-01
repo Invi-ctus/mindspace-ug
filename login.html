@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container">
+    <a href="index.html" class="navbar-brand">
+      <div class="brand-leaf"><i class="fa-solid fa-leaf"></i></div>
+      MindSpace
+    </a>
+    <nav class="navbar-nav" id="navMenu">
+      <a href="index.html">Home</a>
+      <a href="resources.html">Resources</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main class="form-page">
+  <div class="form-card">
+
+    <div class="form-logo">
+      <i class="fa-solid fa-right-to-bracket"></i>
+    </div>
+
+    <h2 class="text-center">Welcome Back</h2>
+    <p class="form-subtitle text-center">Sign in to continue your wellness journey.</p>
+
+    <div id="alertBox"></div>
+
+    <form id="loginForm" action="php/login.php" method="POST" novalidate>
+
+      <div class="form-group">
+        <label for="email">
+          <i class="fa-solid fa-envelope" style="color:#2E7D32;"></i> Email Address
+        </label>
+        <input type="email" id="email" name="email"
+               placeholder="you@example.com"
+               required autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">
+          <i class="fa-solid fa-lock" style="color:#2E7D32;"></i> Password
+        </label>
+        <input type="password" id="password" name="password"
+               placeholder="Your password"
+               required autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full mt-2">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+
+    </form>
+
+    <div class="form-footer">
+      Don't have an account? <a href="register.html">Register free</a>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/main.js"></script>
+<script>
+  const params   = new URLSearchParams(window.location.search);
+  const alertBox = document.getElementById('alertBox');
+  if (params.get('error')) {
+    alertBox.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> ${decodeURIComponent(params.get('error'))}</div>`;
+  }
+  if (params.get('logged_out')) {
+    alertBox.innerHTML = `<div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> You have been logged out successfully.</div>`;
+  }
+</script>
+</body>
+</html>

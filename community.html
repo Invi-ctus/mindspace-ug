@@ -1,0 +1,240 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Board – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="brand-leaf"><i class="fa-solid fa-leaf"></i></div>
+        MindSpace
+      </a>
+      <nav class="navbar-nav" id="navMenu">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="checkin.html">Check-In</a>
+        <a href="community.html">Community</a>
+        <a href="resources.html">Resources</a>
+        <a href="php/logout.php">Logout</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="container">
+      <h1><i class="fa-solid fa-people-group"></i> Community Support Board</h1>
+      <p>Share how you feel. Read others' experiences. You are never alone.</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container" style="padding-bottom:3rem;">
+
+      <!-- Two-column layout: posts feed + post form -->
+      <div style="display:grid; grid-template-columns: 1fr 340px; gap:2rem; align-items:start;">
+
+        <!-- ── Left: Posts feed ── -->
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem;">
+            <h2 style="font-size:1.15rem; font-weight:600; color:#2d3436;">
+              Latest Messages
+            </h2>
+            <button id="refreshBtn" class="btn btn-outline btn-sm">
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
+          </div>
+
+          <!-- Spinner while loading -->
+          <span class="spinner" id="feedSpinner"></span>
+
+          <!-- Posts container -->
+          <div id="postsContainer"></div>
+        </div>
+
+        <!-- ── Right: Post form sidebar ── -->
+        <div>
+          <div class="card" style="position:sticky; top:80px;">
+            <h3 style="margin-bottom:0.3rem;">
+              <i class="fa-solid fa-comment-dots" style="color:#2E7D32;"></i> Share Your Thoughts
+            </h3>
+            <p class="text-muted" style="font-size:0.85rem; margin-bottom:1rem;">
+              All posts are 100% anonymous. Be kind — this is a safe space.
+            </p>
+
+            <!-- Alert on success/error -->
+            <div id="postAlert"></div>
+
+            <form id="postForm">
+              <div class="form-group">
+                <textarea
+                  id="postMessage"
+                  name="message"
+                  rows="4"
+                  maxlength="300"
+                  placeholder="e.g. I've been feeling overwhelmed this week — anyone else relate?"
+                  required
+                ></textarea>
+                <small class="text-muted" id="postCharCount">0 / 300 characters</small>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-full" id="postBtn">
+                <i class="fa-solid fa-paper-plane"></i> Post Anonymously
+              </button>
+            </form>
+
+            <div class="alert alert-warning mt-2" style="font-size:0.8rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              This board is for peer support only. If you are in crisis, please call <strong>0800 21 21 21</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    // ── Helpers ────────────────────────────────────────────────
+    function timeAgo(dtStr) {
+      const then = new Date(dtStr.replace(' ', 'T'));
+      const secs = Math.floor((Date.now() - then.getTime()) / 1000);
+      if (secs < 60)    return 'just now';
+      if (secs < 3600)  return `${Math.floor(secs / 60)}m ago`;
+      if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+      return `${Math.floor(secs / 86400)}d ago`;
+    }
+
+    // ── Load posts from API ────────────────────────────────────
+    async function loadPosts() {
+      document.getElementById('feedSpinner').style.display = 'block';
+      document.getElementById('postsContainer').innerHTML = '';
+
+      try {
+        const res  = await fetch('php/community.php?action=fetch');
+        const data = await res.json();
+
+        document.getElementById('feedSpinner').style.display = 'none';
+
+        if (!data.success) {
+          document.getElementById('postsContainer').innerHTML =
+            `<div class="alert alert-info">
+               <i class="fa-solid fa-circle-user"></i> Please <a href="login.html">log in</a> to view and post messages.
+             </div>`;
+          return;
+        }
+
+        if (data.posts.length === 0) {
+          document.getElementById('postsContainer').innerHTML =
+            `<div class="empty-state">
+               <i class="fa-solid fa-comments" style="font-size:3rem; color:#b2bec3; display:block; margin-bottom:1rem;"></i>
+               <p>No messages yet. Be the first to share!</p>
+             </div>`;
+          return;
+        }
+
+        document.getElementById('postsContainer').innerHTML =
+          data.posts.map(post => `
+            <div class="post-card">
+              <p>${escapeHTML(post.message)}</p>
+              <div class="post-meta">
+                <span><i class="fa-solid fa-leaf" style="color:#4CAF50;"></i> Anonymous</span>
+                <span>&bull;</span>
+                <span>${timeAgo(post.created_at)}</span>
+              </div>
+            </div>
+          `).join('');
+
+      } catch (err) {
+        document.getElementById('feedSpinner').style.display = 'none';
+        document.getElementById('postsContainer').innerHTML =
+          `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> Could not load posts. Please refresh.</div>`;
+      }
+    }
+
+    // ── Submit new post ────────────────────────────────────────
+    document.getElementById('postForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const message = document.getElementById('postMessage').value.trim();
+      const alertEl = document.getElementById('postAlert');
+      const btn     = document.getElementById('postBtn');
+
+      if (!message) {
+        alertEl.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> Please type a message first.</div>`;
+        return;
+      }
+
+      btn.disabled    = true;
+      btn.innerHTML   = '<i class="fa-solid fa-spinner fa-spin"></i> Posting…';
+
+      try {
+        const formData = new FormData();
+        formData.append('action',  'post');
+        formData.append('message', message);
+
+        const res  = await fetch('php/community.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+          alertEl.innerHTML = `<div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Your message was posted!</div>`;
+          document.getElementById('postMessage').value = '';
+          document.getElementById('postCharCount').textContent = '0 / 300 characters';
+          loadPosts();
+        } else {
+          alertEl.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> ${escapeHTML(data.message || 'Could not post. Please log in.')}</div>`;
+        }
+      } catch (err) {
+        alertEl.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> Network error. Please try again.</div>`;
+      } finally {
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Post Anonymously';
+      }
+    });
+
+    // ── Character counter ──────────────────────────────────────
+    document.getElementById('postMessage').addEventListener('input', function () {
+      document.getElementById('postCharCount').textContent =
+        `${this.value.length} / 300 characters`;
+    });
+
+    // ── Refresh btn ────────────────────────────────────────────
+    document.getElementById('refreshBtn').addEventListener('click', loadPosts);
+
+    // ── XSS-safe HTML escape ───────────────────────────────────
+    function escapeHTML(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(str));
+      return d.innerHTML;
+    }
+
+    // ── Responsive: stack columns on mobile ───────────────────
+    function maybeStack() {
+      const grid = document.querySelector('[style*="grid-template-columns"]');
+      if (!grid) return;
+      if (window.innerWidth < 768) {
+        grid.style.gridTemplateColumns = '1fr';
+      } else {
+        grid.style.gridTemplateColumns = '1fr 340px';
+      }
+    }
+    window.addEventListener('resize', maybeStack);
+    maybeStack();
+
+    // ── Init ───────────────────────────────────────────────────
+    loadPosts();
+  </script>
+</body>
+</html>

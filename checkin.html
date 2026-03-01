@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Check-In – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="brand-leaf"><i class="fa-solid fa-leaf"></i></div>
+        MindSpace
+      </a>
+      <nav class="navbar-nav" id="navMenu">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="community.html">Community</a>
+        <a href="resources.html">Resources</a>
+        <a href="php/logout.php">Logout</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="container">
+      <h1><i class="fa-solid fa-pen-to-square"></i> Daily Mood Check-In</h1>
+      <p>Take a moment to reflect on how you are feeling right now.</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container" style="max-width:620px; margin:0 auto; padding-bottom:3rem;">
+
+      <!-- Alert area (for PHP redirect messages) -->
+      <div id="alertBox"></div>
+
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           SUCCESS STATE (shown after submission)
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <div id="successState" style="display:none;">
+        <div class="card text-center" style="padding:2.5rem;">
+          <i class="fa-solid fa-circle-check" style="font-size:3rem; color:#4CAF50; display:block; margin-bottom:1rem;"></i>
+          <h2 style="color:#4CAF50; margin-bottom:0.5rem;">Check-In Saved!</h2>
+          <p class="text-muted">Your mood has been recorded. Keep going!</p>
+        </div>
+
+        <!-- Motivational quote box -->
+        <div class="quote-box" id="quoteBox">
+          <blockquote id="quoteText">Loading your quote…</blockquote>
+          <cite id="quoteAuthor"></cite>
+        </div>
+
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; margin-top:1.5rem;">
+          <a href="dashboard.html" class="btn btn-primary">
+            <i class="fa-solid fa-chart-line"></i> View My Dashboard
+          </a>
+          <a href="community.html" class="btn btn-outline">
+            <i class="fa-solid fa-users"></i> Visit Community
+          </a>
+        </div>
+      </div>
+
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           CHECK-IN FORM
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <div id="checkinForm">
+        <form action="php/checkin.php" method="POST" id="moodForm">
+
+          <!-- ── Step 1: Choose mood ── -->
+          <div class="card mb-2">
+            <h3 style="margin-bottom:0.3rem;">How are you feeling right now? <span style="color:#4CAF50;">*</span></h3>
+            <p class="text-muted" style="font-size:0.88rem; margin-bottom:0;">Pick the emoji that best matches your current mood.</p>
+
+            <div class="mood-grid">
+
+              <div class="mood-option">
+                <input type="radio" id="mood-happy" name="mood" value="happy" required />
+                <label for="mood-happy">
+                  <span class="mood-emoji">😊</span>
+                  Happy
+                </label>
+              </div>
+
+              <div class="mood-option">
+                <input type="radio" id="mood-neutral" name="mood" value="neutral" />
+                <label for="mood-neutral">
+                  <span class="mood-emoji">😐</span>
+                  Neutral
+                </label>
+              </div>
+
+              <div class="mood-option">
+                <input type="radio" id="mood-sad" name="mood" value="sad" />
+                <label for="mood-sad">
+                  <span class="mood-emoji">😔</span>
+                  Sad
+                </label>
+              </div>
+
+              <div class="mood-option">
+                <input type="radio" id="mood-frustrated" name="mood" value="frustrated" />
+                <label for="mood-frustrated">
+                  <span class="mood-emoji">😤</span>
+                  Frustrated
+                </label>
+              </div>
+
+              <div class="mood-option">
+                <input type="radio" id="mood-anxious" name="mood" value="anxious" />
+                <label for="mood-anxious">
+                  <span class="mood-emoji">😰</span>
+                  Anxious
+                </label>
+              </div>
+
+            </div>
+
+            <!-- Validation error shown by JS -->
+            <p id="moodError" class="text-muted" style="display:none; color:#C62828; font-size:0.85rem; margin-top:0.5rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Please select a mood before continuing.
+            </p>
+          </div>
+
+          <!-- ── Step 2: Optional journal note ── -->
+          <div class="card mb-2">
+            <h3 style="margin-bottom:0.3rem;">Want to write about it? <span class="text-muted" style="font-size:0.85rem;">(Optional)</span></h3>
+            <p class="text-muted" style="font-size:0.88rem; margin-bottom:1rem;">
+              A short note helps you look back and understand your patterns.
+              This is only visible to you.
+            </p>
+            <div class="form-group" style="margin-bottom:0;">
+              <textarea
+                name="note"
+                id="note"
+                rows="4"
+                maxlength="500"
+                placeholder="e.g. Had a big exam today, feeling relieved but exhausted…"
+              ></textarea>
+              <small class="text-muted" id="charCount">0 / 500 characters</small>
+            </div>
+          </div>
+
+          <!-- ── Submit ── -->
+          <button type="submit" class="btn btn-primary btn-full" style="font-size:1rem; padding:0.85rem;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Today's Check-In
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    // ── Show PHP error/success from URL params ─────────────────
+    const params   = new URLSearchParams(window.location.search);
+    const alertBox = document.getElementById('alertBox');
+
+    if (params.get('error')) {
+      alertBox.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> ${decodeURIComponent(params.get('error'))}</div>`;
+    }
+
+    // After PHP saves the mood it redirects to checkin.html?saved=1&mood=<value>
+    if (params.get('saved')) {
+      document.getElementById('checkinForm').style.display = 'none';
+      document.getElementById('successState').style.display = 'block';
+      showMotivationalQuote(params.get('mood') || 'neutral');
+    }
+
+    // ── Character counter for note ─────────────────────────────
+    const noteField  = document.getElementById('note');
+    const charCount  = document.getElementById('charCount');
+    noteField.addEventListener('input', () => {
+      charCount.textContent = `${noteField.value.length} / 500 characters`;
+    });
+
+    // ── Client-side mood validation ────────────────────────────
+    document.getElementById('moodForm').addEventListener('submit', function (e) {
+      const selected = document.querySelector('input[name="mood"]:checked');
+      if (!selected) {
+        e.preventDefault();
+        document.getElementById('moodError').style.display = 'block';
+        document.querySelector('.mood-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    // ── Motivational quotes per mood ──────────────────────────
+    const quotes = {
+      happy: [
+        { text: "Happiness is not something ready-made. It comes from your own actions.", author: "Dalai Lama" },
+        { text: "The purpose of our lives is to be happy.", author: "Dalai Lama" }
+      ],
+      neutral: [
+        { text: "Not every day will be great, but there is something great in every day.", author: "Unknown" },
+        { text: "Ordinary days are the canvas on which extraordinary lives are painted.", author: "Unknown" }
+      ],
+      sad: [
+        { text: "This too shall pass. Even the darkest night will end and the sun will rise.", author: "Victor Hugo" },
+        { text: "You don't have to be positive all the time. It's okay to feel everything.", author: "Lori Deschene" }
+      ],
+      frustrated: [
+        { text: "Frustration is a sign that you care. Channel it into energy for change.", author: "Unknown" },
+        { text: "Take a deep breath. You have handled hard things before and you can handle this.", author: "Unknown" }
+      ],
+      anxious: [
+        { text: "Anxiety is the dizziness of freedom — breathe, ground yourself, one step at a time.", author: "Søren Kierkegaard (adapted)" },
+        { text: "You are braver than you believe, stronger than you seem.", author: "A.A. Milne" }
+      ]
+    };
+
+    function showMotivationalQuote(mood) {
+      const list   = quotes[mood] || quotes.neutral;
+      const picked = list[Math.floor(Math.random() * list.length)];
+      document.getElementById('quoteText').textContent   = `"${picked.text}"`;
+      document.getElementById('quoteAuthor').textContent = `— ${picked.author}`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body style="background:#f5f6fa; margin:0;">
+
+  <!-- ═══════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════ -->
+  <aside class="admin-sidebar">
+    <div class="brand">
+      <i class="fa-solid fa-leaf" style="color:#4CAF50;"></i> MindSpace
+      <br /><small style="font-size:0.7rem; color:#636e72; font-weight:400;">Admin Panel</small>
+    </div>
+    <nav style="margin-top:1.5rem;">
+      <a href="index.html" class="active">
+        <i class="fa-solid fa-chart-pie"></i> Dashboard
+      </a>
+      <a href="../dashboard.html">
+        <i class="fa-solid fa-house"></i> User View
+      </a>
+      <a href="../index.html">
+        <i class="fa-solid fa-globe"></i> Home Page
+      </a>
+    </nav>
+
+    <!-- Timestamp -->
+    <div style="position:absolute; bottom:1.5rem; left:1rem; right:1rem; font-size:0.75rem; color:#636e72; border-top:1px solid #3d4447; padding-top:1rem;">
+      Last refreshed:<br />
+      <span id="refreshTime">—</span>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════
+       MAIN CONTENT
+  ═══════════════════════════════════════ -->
+  <main class="admin-main">
+
+    <!-- Header bar -->
+    <div class="admin-header">
+      <h1><i class="fa-solid fa-chart-line"></i> Site Statistics</h1>
+      <div style="display:flex; gap:0.8rem; align-items:center;">
+        <span id="statusBadge" class="mood-badge mood-neutral" style="font-size:0.82rem;">Loading…</span>
+        <button onclick="loadStats()" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-rotate-right"></i> Refresh
+        </button>
+        <a href="../index.html" class="btn btn-primary btn-sm">
+          View Site <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- ── Stat cards ── -->
+    <div class="admin-stats" id="adminStats">
+      <div class="admin-stat-card">
+        <div class="asc-value" id="statUsers">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-users"></i> Total Users
+        </div>
+      </div>
+      <div class="admin-stat-card yellow">
+        <div class="asc-value" id="statMoods">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-chart-bar"></i> Total Check-Ins
+        </div>
+      </div>
+      <div class="admin-stat-card blue">
+        <div class="asc-value" id="statPosts">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-comments"></i> Community Posts
+        </div>
+      </div>
+      <div class="admin-stat-card purple">
+        <div class="asc-value" id="statNewUsers">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-user-plus"></i> New Users (7 days)
+        </div>
+      </div>
+    </div>
+
+    <!-- Top mood highlight card -->
+    <div style="background:#fff; border-radius:14px; padding:1.2rem 1.5rem; margin-bottom:1.5rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); display:flex; align-items:center; gap:1rem;">
+      <div style="width:48px; height:48px; background:#FFF9C4; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+        <i class="fa-solid fa-trophy" style="color:#F9A825;"></i>
+      </div>
+      <div>
+        <div style="font-size:0.82rem; color:#636e72; font-weight:500; text-transform:uppercase; letter-spacing:0.04em;">Most Common Mood This Week</div>
+        <div style="font-size:1.4rem; font-weight:700; color:#4CAF50; margin-top:0.2rem;" id="statTopMood">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Two-column lower section -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+
+      <!-- ── Mood breakdown chart ── -->
+      <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+          <i class="fa-solid fa-chart-pie" style="color:#2E7D32;"></i> Mood Breakdown — Last 7 Days
+        </h3>
+        <canvas id="adminMoodChart" style="max-height:240px;"></canvas>
+        <span class="spinner" id="chartSpinner"></span>
+      </div>
+
+      <!-- ── Mood breakdown table ── -->
+      <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+          <i class="fa-solid fa-table-list" style="color:#2E7D32;"></i> Mood Counts — Last 7 Days
+        </h3>
+        <table class="data-table" id="moodBreakdownTable">
+          <thead>
+            <tr>
+              <th>Mood</th>
+              <th>Count</th>
+              <th>% of Week</th>
+            </tr>
+          </thead>
+          <tbody id="moodBreakdownBody">
+            <tr><td colspan="3" style="text-align:center; color:#b2bec3;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Recent users table ── -->
+    <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); margin-top:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+        <i class="fa-solid fa-user-clock" style="color:#2E7D32;"></i> Recently Registered Users (Last 10)
+      </h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="4" style="text-align:center; color:#b2bec3;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const moodEmoji = {
+      happy: '😊', neutral: '😐', sad: '😔',
+      frustrated: '😤', anxious: '😰'
+    };
+    const moodColors = {
+      happy: '#4CAF50', neutral: '#FFD54F',
+      sad: '#42A5F5', frustrated: '#ef5350', anxious: '#AB47BC'
+    };
+
+    let chartInstance = null;
+
+    async function loadStats() {
+      document.getElementById('statusBadge').textContent = 'Loading…';
+      document.getElementById('statusBadge').className   = 'mood-badge mood-neutral';
+
+      try {
+        const res  = await fetch('admin_data.php');
+        const data = await res.json();
+
+        if (!data.success) throw new Error('API error');
+
+        // ── Stat cards ────────────────────────────────────
+        document.getElementById('statUsers').textContent    = data.totalUsers;
+        document.getElementById('statMoods').textContent    = data.totalMoods;
+        document.getElementById('statPosts').textContent    = data.totalPosts;
+        document.getElementById('statNewUsers').textContent = data.newUsers;
+        document.getElementById('statTopMood').textContent  = data.topMood;
+
+        // ── Mood breakdown table ──────────────────────────
+        const total = data.moodBreakdown.reduce((s, r) => s + Number(r.cnt), 0);
+        document.getElementById('moodBreakdownBody').innerHTML =
+          data.moodBreakdown.length === 0
+            ? '<tr><td colspan="3" style="text-align:center; color:#b2bec3;">No data this week</td></tr>'
+            : data.moodBreakdown.map(row => {
+                const pct = total > 0 ? ((row.cnt / total) * 100).toFixed(1) : '0.0';
+                return `
+                  <tr>
+                    <td><span class="mood-badge mood-${row.mood}">${moodEmoji[row.mood] || ''} ${row.mood}</span></td>
+                    <td><strong>${row.cnt}</strong></td>
+                    <td>${pct}%</td>
+                  </tr>`;
+              }).join('');
+
+        // ── Chart ─────────────────────────────────────────
+        const allMoods = ['happy', 'neutral', 'sad', 'frustrated', 'anxious'];
+        const cntMap   = {};
+        data.moodBreakdown.forEach(r => { cntMap[r.mood] = Number(r.cnt); });
+        const counts = allMoods.map(m => cntMap[m] || 0);
+        const colors = allMoods.map(m => moodColors[m]);
+        const labels = allMoods.map(m => `${moodEmoji[m]} ${m.charAt(0).toUpperCase() + m.slice(1)}`);
+
+        document.getElementById('chartSpinner').style.display = 'none';
+
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(document.getElementById('adminMoodChart'), {
+          type: 'doughnut',
+          data: {
+            labels,
+            datasets: [{ data: counts, backgroundColor: colors, hoverOffset: 10 }]
+          },
+          options: {
+            plugins: { legend: { position: 'bottom', labels: { font: { family: 'Poppins' } } } },
+            responsive: true
+          }
+        });
+
+        // ── Recent users ──────────────────────────────────
+        document.getElementById('usersTableBody').innerHTML =
+          data.recentUsers.length === 0
+            ? '<tr><td colspan="4" style="text-align:center; color:#b2bec3;">No users yet</td></tr>'
+            : data.recentUsers.map((u, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><strong>${u.username}</strong></td>
+                  <td>${u.email}</td>
+                  <td style="color:#636e72; font-size:0.85rem;">${new Date(u.created_at.replace(' ','T')).toLocaleDateString('en-UG', {year:'numeric',month:'short',day:'numeric'})}</td>
+                </tr>`).join('');
+
+        // ── Status badge ──────────────────────────────────
+        document.getElementById('statusBadge').innerHTML  = '<i class="fa-solid fa-circle-check"></i> Up to date';
+        document.getElementById('statusBadge').className  = 'mood-badge mood-happy';
+        document.getElementById('refreshTime').textContent = new Date().toLocaleTimeString('en-UG');
+
+      } catch (err) {
+        console.error('Admin load error:', err);
+        document.getElementById('statusBadge').innerHTML  = '<i class="fa-solid fa-triangle-exclamation"></i> Error loading data';
+        document.getElementById('statusBadge').className  = 'mood-badge mood-frustrated';
+      }
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>

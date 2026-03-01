@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container">
+    <a href="index.html" class="navbar-brand">
+      <div class="brand-leaf"><i class="fa-solid fa-leaf"></i></div>
+      MindSpace
+    </a>
+    <nav class="navbar-nav" id="navMenu">
+      <a href="index.html">Home</a>
+      <a href="resources.html">Resources</a>
+      <a href="login.html">Log in</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main class="form-page">
+  <div class="form-card">
+
+    <div class="form-logo">
+      <i class="fa-solid fa-user-plus"></i>
+    </div>
+
+    <h2 class="text-center">Create Your Account</h2>
+    <p class="form-subtitle text-center">Join MindSpace — it's free and takes one minute.</p>
+
+    <div id="alertBox"></div>
+
+    <form id="registerForm" action="php/register.php" method="POST" novalidate>
+
+      <div class="form-group">
+        <label for="username">
+          <i class="fa-solid fa-at" style="color:#2E7D32;"></i> Username
+        </label>
+        <input type="text" id="username" name="username"
+               placeholder="e.g. bright_kampala"
+               maxlength="50" required autocomplete="username" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">
+          <i class="fa-solid fa-envelope" style="color:#2E7D32;"></i> Email Address
+        </label>
+        <input type="email" id="email" name="email"
+               placeholder="you@example.com"
+               required autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">
+          <i class="fa-solid fa-lock" style="color:#2E7D32;"></i> Password
+        </label>
+        <input type="password" id="password" name="password"
+               placeholder="At least 8 characters"
+               minlength="8" required autocomplete="new-password" />
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password">
+          <i class="fa-solid fa-lock" style="color:#2E7D32;"></i> Confirm Password
+        </label>
+        <input type="password" id="confirm_password" name="confirm_password"
+               placeholder="Repeat your password"
+               required autocomplete="new-password" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full mt-2">
+        <i class="fa-solid fa-user-plus"></i> Create Account
+      </button>
+
+    </form>
+
+    <div class="form-footer">
+      Already have an account? <a href="login.html">Sign in here</a>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/main.js"></script>
+<script>
+  const params   = new URLSearchParams(window.location.search);
+  const alertBox = document.getElementById('alertBox');
+  if (params.get('error')) {
+    alertBox.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> ${decodeURIComponent(params.get('error'))}</div>`;
+  }
+  if (params.get('success')) {
+    alertBox.innerHTML = `<div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Account created! <a href="login.html">Login now</a>.</div>`;
+  }
+</script>
+</body>
+</html>
