@@ -1,5 +1,5 @@
-﻿
-USE if0_41273948_mindspace;
+﻿CREATE DATABASE mindspace_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE mindspace_db;
 
 CREATE TABLE IF NOT EXISTS users (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
