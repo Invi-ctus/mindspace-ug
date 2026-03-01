@@ -14,11 +14,11 @@ ini_set('display_errors', 1);
  */
 
 // ── Database credentials (edit these to match your XAMPP/WAMP setup) ──────────
-define('DB_HOST',    'sql101.infinityfree.com');
+define('DB_HOST',    'localhost');   // XAMPP/WAMP usually runs MySQL on localhost
 define('DB_PORT',    3306);       // InfinityFree default MySQL port
-define('DB_NAME',    'if0_41273948_mindspace');
-define('DB_USER',    'if0_41273948');
-define('DB_PASS',    'Uttorent24');
+define('DB_NAME',    'mindspace_db');
+define('DB_USER',    'root');
+define('DB_PASS',    '');
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Build the Data Source Name (DSN) string ────────────────────────────────────
