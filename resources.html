@@ -380,5 +380,61 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script>
+    // Telemetry tracking for resource interactions
+    (function initResourceTelemetry() {
+      const sessionId = 'sess_' + Math.random().toString(36).substr(2, 9);
+      let pageLoadTime = Date.now();
+      
+      // Track helpline clicks
+      document.querySelectorAll('a[href^="tel:"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          const phoneNumber = this.getAttribute('href').replace('tel:', '');
+          const linkText = this.textContent.trim();
+          
+          // Log click event
+          fetch('php/telemetry.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'click',
+              page_url: window.location.pathname,
+              element_id: `helpline_${phoneNumber}`,
+              element_class: 'resource-phone',
+              metadata: {
+                phone_number: phoneNumber,
+                link_text: linkText,
+                resource_type: 'helpline'
+              }
+            })
+          }).catch(err => console.error('[Telemetry Error]', err));
+        });
+      });
+      
+      // Track page dwell time
+      window.addEventListener('beforeunload', () => {
+        const dwellTime = Math.floor((Date.now() - pageLoadTime) / 1000);
+        if (dwellTime > 0) {
+          navigator.sendBeacon('php/telemetry.php', JSON.stringify({
+            event_type: 'dwell_time',
+            page_url: window.location.pathname,
+            dwell_seconds: dwellTime,
+            metadata: { page_type: 'resources' }
+          }));
+        }
+      });
+      
+      // Log initial page view
+      fetch('php/telemetry.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: 'page_view',
+          page_url: window.location.pathname,
+          metadata: { page_type: 'resources' }
+        })
+      }).catch(err => console.error('[Telemetry Error]', err));
+    })();
+  </script>
 </body>
 </html>

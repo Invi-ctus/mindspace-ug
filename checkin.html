@@ -44,6 +44,11 @@
 
       <!-- Alert area (for PHP redirect messages) -->
       <div id="alertBox"></div>
+      
+      <!-- A/B Test Banner (hidden in production, for debugging) -->
+      <div id="abTestBanner" style="display:none; background:#FFF9C4; padding:0.8rem; border-radius:8px; margin-bottom:1rem; font-size:0.85rem; text-align:center;">
+        <i class="fa-solid fa-flask"></i> Experiment Variant: <strong id="abTestVariant">Loading...</strong>
+      </div>
 
       <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
            SUCCESS STATE (shown after submission)
@@ -72,9 +77,9 @@
       </div>
 
       <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-           CHECK-IN FORM
+           CHECK-IN FORM - Layout A (Classic Vertical)
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-      <div id="checkinForm">
+      <div id="layoutA" class="ab-layout" style="display:none;">
         <form action="php/checkin.php" method="POST" id="moodForm">
 
           <!-- ── Step 1: Choose mood ── -->
@@ -158,12 +163,230 @@
 
         </form>
       </div>
+      
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           CHECK-IN FORM - Layout B (Compact with Colors)
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <div id="layoutB" class="ab-layout" style="display:none;">
+        <form action="php/checkin.php" method="POST" id="moodFormB">
+
+          <!-- ── Step 1: Choose mood (Color-coded compact cards) ── -->
+          <div class="card mb-2" style="background: linear-gradient(135deg, #f5f7fa 0%, #e3e8ec 100%);">
+            <h3 style="margin-bottom:0.3rem;">How are you feeling? <span style="color:#4CAF50;">*</span></h3>
+            <p class="text-muted" style="font-size:0.85rem; margin-bottom:1rem;">Select your current mood</p>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:0.8rem;">
+              
+              <label class="mood-card-b" style="background:#FFE082; padding:1rem; border-radius:10px; cursor:pointer; text-align:center; transition:transform 0.2s, box-shadow 0.2s; display:block;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
+                <input type="radio" name="mood" value="happy" style="display:none;" required onchange="highlightMoodB(this)" />
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">😊</div>
+                <div style="font-weight:600; font-size:0.9rem;">Happy</div>
+              </label>
+
+              <label class="mood-card-b" style="background:#E3F2FD; padding:1rem; border-radius:10px; cursor:pointer; text-align:center; transition:transform 0.2s, box-shadow 0.2s; display:block;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
+                <input type="radio" name="mood" value="neutral" style="display:none;" onchange="highlightMoodB(this)" />
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">😐</div>
+                <div style="font-weight:600; font-size:0.9rem;">Neutral</div>
+              </label>
+
+              <label class="mood-card-b" style="background:#90CAF9; padding:1rem; border-radius:10px; cursor:pointer; text-align:center; transition:transform 0.2s, box-shadow 0.2s; display:block;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
+                <input type="radio" name="mood" value="sad" style="display:none;" onchange="highlightMoodB(this)" />
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">😔</div>
+                <div style="font-weight:600; font-size:0.9rem;">Sad</div>
+              </label>
+
+              <label class="mood-card-b" style="background:#EF9A9A; padding:1rem; border-radius:10px; cursor:pointer; text-align:center; transition:transform 0.2s, box-shadow 0.2s; display:block;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
+                <input type="radio" name="mood" value="frustrated" style="display:none;" onchange="highlightMoodB(this)" />
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">😤</div>
+                <div style="font-weight:600; font-size:0.9rem;">Frustrated</div>
+              </label>
+
+              <label class="mood-card-b" style="background:#CE93D8; padding:1rem; border-radius:10px; cursor:pointer; text-align:center; transition:transform 0.2s, box-shadow 0.2s; display:block;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
+                <input type="radio" name="mood" value="anxious" style="display:none;" onchange="highlightMoodB(this)" />
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">😰</div>
+                <div style="font-weight:600; font-size:0.9rem;">Anxious</div>
+              </label>
+
+            </div>
+
+            <p id="moodErrorB" class="text-muted" style="display:none; color:#C62828; font-size:0.85rem; margin-top:0.8rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Please select a mood before continuing.
+            </p>
+          </div>
+
+          <!-- ── Step 2: Compact journal note ── -->
+          <div class="card mb-2">
+            <h3 style="margin-bottom:0.5rem;">Add a note? <span class="text-muted" style="font-size:0.85rem;">(Optional)</span></h3>
+            <div class="form-group" style="margin-bottom:0;">
+              <textarea
+                name="note"
+                id="noteB"
+                rows="3"
+                maxlength="500"
+                placeholder="Brief note about your day…"
+                style="resize:vertical;"
+              ></textarea>
+              <small class="text-muted" id="charCountB">0 / 500 characters</small>
+            </div>
+          </div>
+
+          <!-- ── Submit ── -->
+          <button type="submit" class="btn btn-primary btn-full" style="font-size:1.05rem; padding:0.95rem; background:linear-gradient(135deg, #66BB6A 0%, #43A047 100%); border:none;">
+            <i class="fa-solid fa-check-circle"></i> Save Check-In
+          </button>
+
+        </form>
+      </div>
 
     </div>
   </main>
 
   <script src="js/main.js"></script>
   <script>
+    // ── A/B Test Layout Management ─────────────────────────────
+    let currentVariant = 'A';
+    let pageLoadTime = Date.now();
+    
+    // Fetch and apply A/B test variant on page load
+    async function initAbTest() {
+      try {
+        const response = await fetch('php/ab_test_api.php');
+        const data = await response.json();
+        
+        if (data.success) {
+          currentVariant = data.variant;
+          document.getElementById('abTestVariant').textContent = 
+            `Layout ${currentVariant} - ${data.description}`;
+          document.getElementById('abTestBanner').style.display = 'block';
+          
+          // Show appropriate layout
+          document.querySelectorAll('.ab-layout').forEach(el => el.style.display = 'none');
+          document.getElementById(`layout${currentVariant}`).style.display = 'block';
+          
+          // Initialize layout-specific features
+          if (currentVariant === 'A') {
+            initLayoutA();
+          } else {
+            initLayoutB();
+          }
+          
+          // Log page view with telemetry
+          logTelemetry('page_view', window.location.pathname, null, 'checkin_page');
+        }
+      } catch (error) {
+        console.error('[A/B Test Error]', error);
+        // Fallback to Layout A
+        currentVariant = 'A';
+        document.getElementById('layoutA').style.display = 'block';
+        initLayoutA();
+      }
+    }
+    
+    // Initialize Layout A specific features
+    function initLayoutA() {
+      // Character counter for note
+      const noteField = document.getElementById('note');
+      const charCount = document.getElementById('charCount');
+      if (noteField && charCount) {
+        noteField.addEventListener('input', () => {
+          charCount.textContent = `${noteField.value.length} / 500 characters`;
+        });
+      }
+      
+      // Client-side mood validation
+      const form = document.getElementById('moodForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          const selected = document.querySelector('input[name="mood"]:checked');
+          if (!selected) {
+            e.preventDefault();
+            document.getElementById('moodError').style.display = 'block';
+            document.querySelector('.mood-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            // Log form interaction
+            logTelemetry('form_interaction', '/checkin.html', 'mood_submit_a', { mood: selected.value });
+          }
+        });
+      }
+    }
+    
+    // Initialize Layout B specific features
+    function initLayoutB() {
+      // Character counter for note
+      const noteField = document.getElementById('noteB');
+      const charCount = document.getElementById('charCountB');
+      if (noteField && charCount) {
+        noteField.addEventListener('input', () => {
+          charCount.textContent = `${noteField.value.length} / 500 characters`;
+        });
+      }
+      
+      // Client-side mood validation
+      const form = document.getElementById('moodFormB');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          const selected = document.querySelector('#moodFormB input[name="mood"]:checked');
+          if (!selected) {
+            e.preventDefault();
+            document.getElementById('moodErrorB').style.display = 'block';
+          } else {
+            // Log form interaction
+            logTelemetry('form_interaction', '/checkin.html', 'mood_submit_b', { mood: selected.value });
+          }
+        });
+      }
+    }
+    
+    // Highlight selected mood in Layout B
+    function highlightMoodB(radio) {
+      // Remove highlight from all
+      document.querySelectorAll('.mood-card-b').forEach(card => {
+        card.style.boxShadow = 'none';
+        card.style.transform = 'scale(1)';
+        card.style.border = '2px solid transparent';
+      });
+      
+      // Highlight selected
+      const parent = radio.closest('.mood-card-b');
+      if (parent) {
+        parent.style.boxShadow = '0 6px 20px rgba(0,0,0,0.2)';
+        parent.style.transform = 'scale(1.08)';
+        parent.style.border = '3px solid #4CAF50';
+      }
+    }
+    
+    // Telemetry logging helper
+    async function logTelemetry(eventType, pageUrl, elementId = null, metadata = null) {
+      try {
+        const dwellTime = Math.floor((Date.now() - pageLoadTime) / 1000);
+        
+        await fetch('php/telemetry.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: eventType,
+            page_url: pageUrl,
+            element_id: elementId,
+            dwell_seconds: dwellTime,
+            metadata: typeof metadata === 'object' ? metadata : { info: metadata },
+            ab_variant: currentVariant
+          })
+        });
+      } catch (error) {
+        console.error('[Telemetry Error]', error);
+      }
+    }
+    
+    // Track resource link clicks
+    function trackResourceClick(linkName) {
+      logTelemetry('click', window.location.pathname, `resource_${linkName}`, { 
+        link_name: linkName,
+        ab_variant: currentVariant
+      });
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initAbTest);
     // ── Show PHP error/success from URL params ─────────────────
     const params   = new URLSearchParams(window.location.search);
     const alertBox = document.getElementById('alertBox');
@@ -172,29 +395,18 @@
       alertBox.innerHTML = `<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> ${decodeURIComponent(params.get('error'))}</div>`;
     }
 
-    // After PHP saves the mood it redirects to checkin.html?saved=1&mood=<value>
+    // After PHP saves the mood it redirects to checkin.html?saved=1&mood=<value>&variant=<A|B>
     if (params.get('saved')) {
-      document.getElementById('checkinForm').style.display = 'none';
+      document.querySelectorAll('.ab-layout').forEach(el => el.style.display = 'none');
       document.getElementById('successState').style.display = 'block';
       showMotivationalQuote(params.get('mood') || 'neutral');
+      
+      // Log conversion
+      logTelemetry('form_interaction', '/checkin.html', 'conversion_success', {
+        mood: params.get('mood'),
+        variant: params.get('variant') || currentVariant
+      });
     }
-
-    // ── Character counter for note ─────────────────────────────
-    const noteField  = document.getElementById('note');
-    const charCount  = document.getElementById('charCount');
-    noteField.addEventListener('input', () => {
-      charCount.textContent = `${noteField.value.length} / 500 characters`;
-    });
-
-    // ── Client-side mood validation ────────────────────────────
-    document.getElementById('moodForm').addEventListener('submit', function (e) {
-      const selected = document.querySelector('input[name="mood"]:checked');
-      if (!selected) {
-        e.preventDefault();
-        document.getElementById('moodError').style.display = 'block';
-        document.querySelector('.mood-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
 
     // ── Motivational quotes per mood ──────────────────────────
     const quotes = {
@@ -226,6 +438,19 @@
       document.getElementById('quoteText').textContent   = `"${picked.text}"`;
       document.getElementById('quoteAuthor').textContent = `— ${picked.author}`;
     }
+    
+    // Track dwell time before leaving page
+    window.addEventListener('beforeunload', () => {
+      const dwellTime = Math.floor((Date.now() - pageLoadTime) / 1000);
+      if (dwellTime > 0) {
+        navigator.sendBeacon('php/telemetry.php', JSON.stringify({
+          event_type: 'dwell_time',
+          page_url: window.location.pathname,
+          dwell_seconds: dwellTime,
+          ab_variant: currentVariant
+        }));
+      }
+    });
   </script>
 </body>
 </html>
