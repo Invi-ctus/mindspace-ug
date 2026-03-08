@@ -164,6 +164,9 @@ ul { list-style: none; }
   gap: .2rem;
 }
 .navbar-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: .42rem .88rem;
   font-size: .86rem;
   font-weight: 500;

@@ -352,15 +352,6 @@ window.MindSpace = {
           <span>My Profile</span>
         </a>
         <div class="profile-menu-divider"></div>
-        <a href="dashboard.html">
-          <i class="fa-solid fa-chart-line"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="checkin.html">
-          <i class="fa-solid fa-pen-to-square"></i>
-          <span>Daily Check-In</span>
-        </a>
-        <div class="profile-menu-divider"></div>
         <a href="php/logout.php">
           <i class="fa-solid fa-right-from-bracket"></i>
           <span>Logout</span>
