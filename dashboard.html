@@ -26,7 +26,7 @@
         <a href="checkin.html">Check-In</a>
         <a href="community.html">Community</a>
         <a href="resources.html">Resources</a>
-        <a href="php/logout.php">Logout</a>
+        <!-- Dynamic login/logout will be inserted here by JavaScript -->
       </nav>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
@@ -273,7 +273,22 @@
     }
 
     // ── Kick it off ────────────────────────────────────────────
-    loadDashboard();
+    // Check authentication first
+    async function checkAuth() {
+      try {
+        const res = await fetch('php/session_check.php');
+        const data = await res.json();
+        if (!data.logged_in) {
+          window.location.href = 'login.html';
+          return;
+        }
+        loadDashboard();
+      } catch (err) {
+        console.error('Auth check error:', err);
+        window.location.href = 'login.html';
+      }
+    }
+    checkAuth();
   </script>
 </body>
 </html>

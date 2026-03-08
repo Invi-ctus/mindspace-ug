@@ -9,7 +9,14 @@ ini_set('display_errors', 1);
  * and redirects to the dashboard on success.
  */
 
-session_start();
+// Start session with secure settings
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_httponly' => true,
+        'cookie_secure'   => isset($_SERVER['HTTPS']),
+        'use_strict_mode' => true
+    ]);
+}
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

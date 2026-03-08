@@ -10,8 +10,14 @@ error_reporting(E_ALL);
  * into the database. Redirects back with a success or error flag.
  */
 
-// Start session so we can log the user in immediately after registration
-session_start();
+// Start session with secure settings so we can log the user in immediately after registration
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_httponly' => true,
+        'cookie_secure'   => isset($_SERVER['HTTPS']),
+        'use_strict_mode' => true
+    ]);
+}
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="brand-leaf"><i class="fa-solid fa-leaf"></i></div>
+        MindSpace
+      </a>
+      <nav class="navbar-nav" id="navMenu">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="checkin.html">Check-In</a>
+        <a href="community.html">Community</a>
+        <a href="resources.html">Resources</a>
+        <!-- Dynamic login/logout will be inserted here by JavaScript -->
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="container">
+      <h1><i class="fa-solid fa-user-circle"></i> My Profile</h1>
+      <p>Manage your account settings and preferences.</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container" style="max-width:700px; margin:0 auto; padding-bottom:3rem;">
+      
+      <div id="alertBox"></div>
+
+      <!-- Profile Card -->
+      <div class="form-card" style="margin-top:2rem;">
+        
+        <div style="text-align:center; margin-bottom:2rem;">
+          <div style="width:80px; height:80px; background:linear-gradient(135deg, #43A047, #1B5E20); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:2.5rem; margin:0 auto 1rem;">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <h2 id="profileUsername" style="font-size:1.5rem; margin-bottom:0.3rem;">Loading...</h2>
+          <p style="color:#8E9AAB; font-size:0.9rem;">Member since <span id="memberSince">Loading...</span></p>
+        </div>
+
+        <!-- Update Username Form -->
+        <div style="background:#F7FAF8; padding:1.5rem; border-radius:12px; margin-bottom:1.5rem;">
+          <h3 style="font-size:1.1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; color:#1B5E20;">
+            <i class="fa-solid fa-pen-to-square"></i> Update Username
+          </h3>
+          <form id="updateUsernameForm">
+            <div class="form-group">
+              <label for="newUsername">
+                <i class="fa-solid fa-user" style="color:#2E7D32;"></i> New Username
+              </label>
+              <input type="text" id="newUsername" name="username" placeholder="Enter new username" required minlength="3" maxlength="50" pattern="[a-zA-Z0-9_]{3,50}" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-full mt-2">
+              <i class="fa-solid fa-save"></i> Update Username
+            </button>
+          </form>
+        </div>
+
+        <!-- Update Password Form -->
+        <div style="background:#F7FAF8; padding:1.5rem; border-radius:12px;">
+          <h3 style="font-size:1.1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; color:#1B5E20;">
+            <i class="fa-solid fa-lock"></i> Change Password
+          </h3>
+          <form id="updatePasswordForm">
+            <div class="form-group">
+              <label for="currentPassword">
+                <i class="fa-solid fa-key" style="color:#2E7D32;"></i> Current Password
+              </label>
+              <input type="password" id="currentPassword" name="current_password" placeholder="Enter current password" required autocomplete="current-password" />
+            </div>
+
+            <div class="form-group">
+              <label for="newPassword">
+                <i class="fa-solid fa-lock" style="color:#2E7D32;"></i> New Password
+              </label>
+              <input type="password" id="newPassword" name="new_password" placeholder="Enter new password" required minlength="8" autocomplete="new-password" />
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">
+                <i class="fa-solid fa-lock" style="color:#2E7D32;"></i> Confirm New Password
+              </label>
+              <input type="password" id="confirmPassword" name="confirm_password" placeholder="Confirm new password" required minlength="8" autocomplete="new-password" />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full mt-2">
+              <i class="fa-solid fa-shield-halved"></i> Update Password
+            </button>
+          </form>
+        </div>
+
+        <div style="margin-top:2rem; text-align:center;">
+          <a href="dashboard.html" class="btn btn-outline" style="color:#2E7D32; border-color:#2E7D32;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    // ── Check authentication on load ───────────────────────────
+    let currentUser = null;
+
+    async function checkAuth() {
+      try {
+        const res = await fetch('php/session_check.php');
+        const data = await res.json();
+        
+        if (!data.logged_in) {
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        currentUser = data;
+        document.getElementById('profileUsername').textContent = data.username;
+        document.getElementById('memberSince').textContent = new Date().toLocaleDateString('en-UG', { 
+          year: 'numeric', month: 'long' 
+        });
+      } catch (err) {
+        console.error('Auth check error:', err);
+        showAlert('error', 'Failed to verify login status');
+      }
+    }
+
+    // ── Show alert ─────────────────────────────────────────────
+    function showAlert(type, message) {
+      const alertBox = document.getElementById('alertBox');
+      const iconMap = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        info: 'fa-circle-info'
+      };
+      alertBox.innerHTML = `
+        <div class="alert alert-${type}">
+          <i class="fa-solid ${iconMap[type]}"></i> ${message}
+        </div>
+      `;
+      
+      // Auto-dismiss after 6 seconds
+      setTimeout(() => {
+        const alert = alertBox.querySelector('.alert');
+        if (alert) {
+          alert.style.transition = 'opacity 0.6s ease, max-height 0.6s ease';
+          alert.style.opacity = '0';
+          alert.style.maxHeight = '0';
+          alert.style.overflow = 'hidden';
+          alert.style.padding = '0';
+          setTimeout(() => alert.remove(), 700);
+        }
+      }, 6000);
+    }
+
+    // ── Update Username ────────────────────────────────────────
+    document.getElementById('updateUsernameForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      formData.append('action', 'update_username');
+      
+      try {
+        const res = await fetch('php/profile_update.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showAlert('success', data.message);
+          document.getElementById('profileUsername').textContent = data.username;
+          e.target.reset();
+        } else {
+          showAlert('error', data.message);
+        }
+      } catch (err) {
+        showAlert('error', 'Failed to update username');
+        console.error(err);
+      }
+    });
+
+    // ── Update Password ────────────────────────────────────────
+    document.getElementById('updatePasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      formData.append('action', 'update_password');
+      
+      try {
+        const res = await fetch('php/profile_update.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showAlert('success', data.message);
+          e.target.reset();
+        } else {
+          showAlert('error', data.message);
+        }
+      } catch (err) {
+        showAlert('error', 'Failed to update password');
+        console.error(err);
+      }
+    });
+
+    // ── Initialize ─────────────────────────────────────────────
+    checkAuth();
+  </script>
+</body>
+</html>

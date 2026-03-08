@@ -7,6 +7,7 @@
  *  - Form submit loading states
  *  - Auto-dismiss alerts
  *  - Smooth scroll for anchor links
+ *  - Session management & profile menu
  *
  * No dependencies — pure vanilla JavaScript.
  */
@@ -279,3 +280,169 @@ window.MindSpace = {
     }, 4000);
   }
 };
+
+
+/* ─────────────────────────────────────────────────────────────
+   10. SESSION MANAGEMENT & PROFILE MENU
+   Handles login state checking and renders profile dropdown
+   ───────────────────────────────────────────────────────────── */
+(function initSessionManagement() {
+  'use strict';
+  
+  // Check if we're on a public page (index, login, register)
+  const isPublicPage = () => {
+    const path = window.location.pathname;
+    return path.includes('index.html') || 
+           path.includes('login.html') || 
+           path.includes('register.html') ||
+           path === '/' || 
+           path.endsWith('/');
+  };
+
+  // Check if user is logged in
+  async function checkSession() {
+    try {
+      const res = await fetch('php/session_check.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      const data = await res.json();
+      console.log('Session check result:', data); // Debug log
+      return data;
+    } catch (err) {
+      console.error('Session check failed:', err);
+      return { logged_in: false, error: err.message };
+    }
+  }
+
+  // Render profile menu in navbar
+  function renderProfileMenu(username) {
+    const navMenu = document.getElementById('navMenu');
+    if (!navMenu) {
+      console.warn('navMenu element not found');
+      return;
+    }
+
+    // Remove any existing login/logout/profile elements
+    const existingAuthElements = navMenu.querySelectorAll('.auth-element');
+    existingAuthElements.forEach(el => el.remove());
+
+    // Create profile menu container
+    const profileContainer = document.createElement('div');
+    profileContainer.className = 'profile-menu-container auth-element';
+    
+    const initial = username ? username.charAt(0).toUpperCase() : 'U';
+    
+    profileContainer.innerHTML = `
+      <button class="profile-menu-trigger" aria-label="Profile menu" aria-expanded="false">
+        <div class="profile-avatar">${initial}</div>
+        <span>${username}</span>
+        <i class="fa-solid fa-chevron-down" style="font-size:0.7rem; margin-left:0.2rem;"></i>
+      </button>
+      <div class="profile-menu-dropdown">
+        <div class="profile-menu-header">
+          <div class="pm-username">${username}</div>
+          <div class="pm-member">MindSpace Member</div>
+        </div>
+        <a href="profile.html">
+          <i class="fa-solid fa-user-circle"></i>
+          <span>My Profile</span>
+        </a>
+        <div class="profile-menu-divider"></div>
+        <a href="dashboard.html">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="checkin.html">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Daily Check-In</span>
+        </a>
+        <div class="profile-menu-divider"></div>
+        <a href="php/logout.php">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </a>
+      </div>
+    `;
+
+    navMenu.appendChild(profileContainer);
+    console.log('Profile menu rendered for:', username); // Debug log
+
+    // Toggle dropdown on click
+    const trigger = profileContainer.querySelector('.profile-menu-trigger');
+    const dropdown = profileContainer.querySelector('.profile-menu-dropdown');
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isActive = dropdown.classList.toggle('active');
+      trigger.setAttribute('aria-expanded', isActive);
+      console.log('Dropdown toggled:', isActive); // Debug log
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!profileContainer.contains(e.target)) {
+        dropdown.classList.remove('active');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close dropdown when clicking a link
+    const dropdownLinks = dropdown.querySelectorAll('a');
+    dropdownLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        dropdown.classList.remove('active');
+        trigger.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+
+  // Render login/register buttons for public pages
+  function renderLoginButtons() {
+    const navMenu = document.getElementById('navMenu');
+    if (!navMenu) return;
+
+    // Remove any existing auth elements
+    const existingAuthElements = navMenu.querySelectorAll('.auth-element');
+    existingAuthElements.forEach(el => el.remove());
+
+    // Add Login and Register buttons
+    const loginLink = document.createElement('a');
+    loginLink.href = 'login.html';
+    loginLink.textContent = 'Log in';
+    loginLink.className = 'auth-element';
+    navMenu.appendChild(loginLink);
+
+    const registerBtn = document.createElement('a');
+    registerBtn.href = 'register.html';
+    registerBtn.textContent = 'Get Started';
+    registerBtn.className = 'btn btn-primary btn-sm auth-element';
+    navMenu.appendChild(registerBtn);
+    
+    console.log('Login buttons rendered'); // Debug log
+  }
+
+  // Initialize on all pages - wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  
+  function init() {
+    console.log('Initializing session management...'); // Debug log
+    checkSession().then(session => {
+      if (session.logged_in && session.username) {
+        renderProfileMenu(session.username);
+      } else {
+        renderLoginButtons();
+      }
+    }).catch(err => {
+      console.error('Session initialization error:', err);
+      renderLoginButtons();
+    });
+  }
+})();
