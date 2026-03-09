@@ -6,6 +6,7 @@
 *.swp
 *.swo
 *~
+.qoder
 
 # System files
 .DS_Store
