@@ -59,7 +59,7 @@ function sanitizeTelemetryData(array $data): array {
     ];
     
     // Validate event type against whitelist
-    $allowedEvents = ['page_view', 'click', 'dwell_time', 'form_interaction', 'resource_access'];
+    $allowedEvents = ['page_view', 'click', 'dwell_time', 'form_interaction', 'resource_access', 'scroll_depth', 'search', 'navigation', 'experiment_exposure'];
     $eventType = trim($data['event_type'] ?? '');
     $sanitized['event_type'] = in_array($eventType, $allowedEvents, true) ? $eventType : 'page_view';
     

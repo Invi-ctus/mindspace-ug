@@ -283,11 +283,108 @@
           return;
         }
         loadDashboard();
+        initDashboardExperiment();  // Experiment 4: nudge banner A/B test
       } catch (err) {
         console.error('Auth check error:', err);
         window.location.href = 'login.html';
       }
     }
+
+    // ── Experiment 4: Dashboard Nudge A/B Test ─────────────────
+    // Variant A: static summary (control — nothing extra)
+    // Variant B: streak goal banner + interactive "click a mood to filter" tooltip
+    let dashboardVariant = 'A';
+    const pageLoadTime = Date.now();
+
+    async function initDashboardExperiment() {
+      try {
+        const res  = await fetch('php/ab_test_api.php?experiment=dashboard_nudge_test');
+        const data = await res.json();
+        if (!data.success) return;
+
+        dashboardVariant = data.variant;
+
+        if (dashboardVariant === 'B') {
+          injectNudgeBanner();
+        }
+
+        // Log page view with variant context
+        sendTelemetry('page_view', window.location.pathname, null, {
+          page_type: 'dashboard',
+          ab_variant: dashboardVariant,
+          experiment: 'dashboard_nudge_test'
+        });
+      } catch (e) {
+        console.error('[Dashboard Experiment Error]', e);
+        // Fallback: still log basic page view
+        sendTelemetry('page_view', window.location.pathname, null, { page_type: 'dashboard' });
+      }
+    }
+
+    function injectNudgeBanner() {
+      const statsGrid = document.getElementById('statsGrid');
+      if (!statsGrid) return;
+
+      const banner = document.createElement('div');
+      banner.id = 'nudgeBanner';
+      banner.style.cssText = [
+        'background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%)',
+        'border-left:4px solid #4CAF50',
+        'border-radius:10px',
+        'padding:1rem 1.4rem',
+        'margin-bottom:1.2rem',
+        'display:flex',
+        'align-items:center',
+        'gap:1rem',
+        'box-shadow:0 2px 8px rgba(76,175,80,0.15)'
+      ].join(';');
+
+      banner.innerHTML = `
+        <i class="fa-solid fa-fire" style="font-size:1.8rem;color:#FF8F00;flex-shrink:0;"></i>
+        <div style="flex:1;">
+          <strong id="nudgeHeadline" style="color:#2E7D32;font-size:1rem;">Keep your streak going!</strong>
+          <p style="margin:0.2rem 0 0;font-size:0.87rem;color:#555;">
+            Check in today to maintain your streak. Every day counts.
+          </p>
+        </div>
+        <a href="checkin.html" class="btn btn-primary btn-sm" id="nudgeCTA"
+           style="white-space:nowrap;" 
+           onclick="trackNudgeClick()">
+          <i class="fa-solid fa-plus"></i> Check In
+        </a>`;
+
+      statsGrid.parentNode.insertBefore(banner, statsGrid);
+    }
+
+    function trackNudgeClick() {
+      sendTelemetry('click', window.location.pathname, 'nudge_banner_cta', {
+        experiment: 'dashboard_nudge_test',
+        ab_variant: 'B'
+      });
+    }
+
+    // Reusable telemetry helper for dashboard
+    function sendTelemetry(eventType, pageUrl, elementId, metadata) {
+      fetch('php/telemetry.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_type: eventType, page_url: pageUrl, element_id: elementId, metadata })
+      }).catch(() => {});
+    }
+
+    // Track dwell time on unload
+    window.addEventListener('beforeunload', () => {
+      const dwell = Math.floor((Date.now() - pageLoadTime) / 1000);
+      if (dwell > 0) {
+        navigator.sendBeacon('php/telemetry.php', JSON.stringify({
+          event_type: 'dwell_time',
+          page_url: window.location.pathname,
+          dwell_seconds: dwell,
+          metadata: { page_type: 'dashboard', ab_variant: dashboardVariant }
+        }));
+      }
+    });
+
     checkAuth();
   </script>
 </body>

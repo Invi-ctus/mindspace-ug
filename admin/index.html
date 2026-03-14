@@ -152,6 +152,42 @@
       </div>
     </div>
 
+    <!-- ── A/B Experiment Results ── -->
+    <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); margin-top:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+        <i class="fa-solid fa-flask" style="color:#7B1FA2;"></i> A/B Experiment Results
+      </h3>
+      <div id="experimentResultsContainer">
+        <p style="color:#b2bec3; text-align:center;">Loading…</p>
+      </div>
+    </div>
+
+    <!-- ── Page Funnel ── -->
+    <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); margin-top:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+        <i class="fa-solid fa-filter" style="color:#42A5F5;"></i> Page Funnel — Unique Sessions (Last 30 Days)
+      </h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Page</th><th>Unique Sessions</th><th>Avg Dwell (s)</th></tr>
+          </thead>
+          <tbody id="pageFunnelBody">
+            <tr><td colspan="3" style="text-align:center; color:#b2bec3;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Daily Active Sessions Sparkline ── -->
+    <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); margin-top:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+        <i class="fa-solid fa-chart-simple" style="color:#FF8F00;"></i> Daily Active Sessions — Last 14 Days
+      </h3>
+      <canvas id="activityChart" style="max-height:180px;"></canvas>
+      <p id="activityEmpty" style="display:none; text-align:center; color:#b2bec3;">No telemetry data yet. Run the v2 migration first.</p>
+    </div>
+
   </main>
 
   <script>
@@ -238,6 +274,15 @@
         document.getElementById('statusBadge').className  = 'mood-badge mood-happy';
         document.getElementById('refreshTime').textContent = new Date().toLocaleTimeString('en-UG');
 
+        // ── A/B Experiment Results ─────────────────────────
+        renderExperiments(data.experimentResults || {});
+
+        // ── Page Funnel ────────────────────────────────────
+        renderPageFunnel(data.pageFunnel || []);
+
+        // ── Daily Activity Chart ───────────────────────────
+        renderActivityChart(data.dailyActivity || []);
+
       } catch (err) {
         console.error('Admin load error:', err);
         document.getElementById('statusBadge').innerHTML  = '<i class="fa-solid fa-triangle-exclamation"></i> Error loading data';
@@ -246,6 +291,111 @@
     }
 
     loadStats();
-  </script>
+
+    // ── Render A/B Experiment Cards ────────────────────────────
+    function renderExperiments(results) {
+      const container = document.getElementById('experimentResultsContainer');
+      const names = Object.keys(results);
+      if (names.length === 0) {
+        container.innerHTML = '<p style="color:#b2bec3;text-align:center;">No experiment data yet. Visit check-in or dashboard pages to generate assignments.</p>';
+        return;
+      }
+
+      const experimentLabels = {
+        checkin_layout_test:   'Check-In Layout (Experiment 1)',
+        dashboard_nudge_test:  'Dashboard Nudge Banner (Experiment 4)',
+        resources_layout_test: 'Resources Page Layout (Experiment 3)',
+      };
+
+      container.innerHTML = names.map(expName => {
+        const variants = results[expName];
+        const varA = variants['A'] || { total_assigned: 0, conversions: 0, conversion_rate: 0 };
+        const varB = variants['B'] || { total_assigned: 0, conversions: 0, conversion_rate: 0 };
+        const winner = varA.conversion_rate >= varB.conversion_rate ? 'A' : 'B';
+        const diff   = Math.abs(varA.conversion_rate - varB.conversion_rate).toFixed(1);
+        const totalUsers = (varA.total_assigned + varB.total_assigned);
+
+        return `
+          <div style="border:1px solid #e0e0e0; border-radius:10px; padding:1.2rem; margin-bottom:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.8rem;">
+              <strong style="color:#2d3436;">${experimentLabels[expName] || expName}</strong>
+              <span style="font-size:0.8rem; color:#636e72;">${totalUsers} total assigned</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              ${['A','B'].map(v => {
+                const vd = variants[v] || { total_assigned: 0, conversions: 0, conversion_rate: 0 };
+                const isWinner = v === winner && totalUsers > 0;
+                return `
+                  <div style="background:${isWinner ? '#E8F5E9' : '#f8f9fa'}; border-radius:8px; padding:1rem; border:2px solid ${isWinner ? '#4CAF50' : 'transparent'};">
+                    <div style="font-size:0.8rem; color:#636e72; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.4rem;">
+                      Variant ${v} ${isWinner ? '<span style="color:#4CAF50;">★ Leading</span>' : ''}
+                    </div>
+                    <div style="font-size:1.6rem; font-weight:700; color:${isWinner ? '#2E7D32' : '#2d3436'};">${vd.conversion_rate}%</div>
+                    <div style="font-size:0.82rem; color:#636e72; margin-top:0.2rem;">${vd.conversions} / ${vd.total_assigned} converted</div>
+                  </div>`;
+              }).join('')}
+            </div>
+            ${totalUsers > 0 ? `<p style="font-size:0.83rem; color:#555; margin:0.8rem 0 0;">
+              Variant ${winner} leads by <strong>${diff}%</strong>. 
+              ${totalUsers >= 800 ? '✅ Sufficient sample size reached for a decision.' : `⏳ ${800 - totalUsers} more users needed for statistical confidence (target: 800).`}
+            </p>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    // ── Render Page Funnel Table ───────────────────────────────
+    function renderPageFunnel(funnel) {
+      const tbody = document.getElementById('pageFunnelBody');
+      if (funnel.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#b2bec3;">No page view data yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = funnel.map(row => {
+        const page = row.page_url || '–';
+        return `<tr>
+          <td><code style="font-size:0.85rem;">${page}</code></td>
+          <td><strong>${row.unique_sessions}</strong></td>
+          <td>${row.avg_dwell_seconds ? row.avg_dwell_seconds + 's' : '–'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Render Daily Activity Chart ────────────────────────────
+    let activityChartInstance = null;
+    function renderActivityChart(rows) {
+      if (rows.length === 0) {
+        document.getElementById('activityChart').style.display = 'none';
+        document.getElementById('activityEmpty').style.display = 'block';
+        return;
+      }
+      const labels = rows.map(r => new Date(r.day + 'T00:00:00').toLocaleDateString('en-UG', { month: 'short', day: 'numeric' }));
+      const values = rows.map(r => Number(r.active_sessions));
+
+      if (activityChartInstance) activityChartInstance.destroy();
+      activityChartInstance = new Chart(document.getElementById('activityChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Active Sessions',
+            data: values,
+            fill: true,
+            tension: 0.4,
+            borderColor: '#FF8F00',
+            backgroundColor: 'rgba(255,143,0,0.12)',
+            pointBackgroundColor: '#FF8F00',
+            pointRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Poppins' } } },
+            x: { ticks: { font: { family: 'Poppins', size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
 </body>
 </html>

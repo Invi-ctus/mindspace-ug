@@ -15,14 +15,6 @@ ini_set('display_errors', 1);
 
 header('Content-Type: application/json');
 
-// ── Simple IP-based dev guard (remove in production, add real auth) ──
-// $allowedIPs = ['127.0.0.1', '::1'];
-// if (!in_array($_SERVER['REMOTE_ADDR'], $allowedIPs)) {
-//     http_response_code(403);
-//     echo json_encode(['success' => false, 'message' => 'Forbidden.']);
-//     exit;
-// }
-
 require_once __DIR__ . '/../php/db.php';
 
 // ── 1. Total registered users ──────────────────────────────────
@@ -79,13 +71,107 @@ foreach ($recentUsers as &$u) {
 }
 unset($u);
 
+// ── 8. A/B experiment results (all known experiments) ─────────
+$experimentResults = [];
+try {
+    $stmt = $pdo->query(
+        "SELECT
+            experiment_name,
+            variant,
+            COUNT(*)                                          AS total_assigned,
+            SUM(converted)                                    AS conversions,
+            ROUND(SUM(converted) * 100.0 / COUNT(*), 1)      AS conversion_rate
+         FROM ab_test_assignments
+         GROUP BY experiment_name, variant
+         ORDER BY experiment_name, variant"
+    );
+    $rows = $stmt->fetchAll();
+    foreach ($rows as $row) {
+        $exp = $row['experiment_name'];
+        if (!isset($experimentResults[$exp])) {
+            $experimentResults[$exp] = [];
+        }
+        $experimentResults[$exp][$row['variant']] = [
+            'total_assigned'   => (int)   $row['total_assigned'],
+            'conversions'      => (int)   $row['conversions'],
+            'conversion_rate'  => (float) $row['conversion_rate'],
+        ];
+    }
+} catch (PDOException $e) {
+    // telemetry tables may not exist on older installs
+    $experimentResults = [];
+}
+
+// ── 9. Page funnel — unique sessions per page (last 30 days) ──
+$pageFunnel = [];
+try {
+    $stmt = $pdo->query(
+        "SELECT
+            page_url,
+            COUNT(DISTINCT session_id) AS unique_sessions,
+            COUNT(*)                   AS total_events,
+            ROUND(AVG(dwell_seconds))  AS avg_dwell_seconds
+         FROM telemetry_logs
+         WHERE event_type = 'page_view'
+           AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+         GROUP BY page_url
+         ORDER BY unique_sessions DESC
+         LIMIT 10"
+    );
+    $pageFunnel = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $pageFunnel = [];
+}
+
+// ── 10. Top clicked elements (last 30 days) ───────────────────
+$topClicks = [];
+try {
+    $stmt = $pdo->query(
+        "SELECT
+            element_id,
+            page_url,
+            COUNT(*) AS click_count
+         FROM telemetry_logs
+         WHERE event_type = 'click'
+           AND element_id IS NOT NULL
+           AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+         GROUP BY element_id, page_url
+         ORDER BY click_count DESC
+         LIMIT 10"
+    );
+    $topClicks = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $topClicks = [];
+}
+
+// ── 11. Daily active sessions (last 14 days) ──────────────────
+$dailyActivity = [];
+try {
+    $stmt = $pdo->query(
+        "SELECT
+            DATE(created_at)           AS day,
+            COUNT(DISTINCT session_id) AS active_sessions
+         FROM telemetry_logs
+         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+         GROUP BY DATE(created_at)
+         ORDER BY day ASC"
+    );
+    $dailyActivity = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $dailyActivity = [];
+}
+
 echo json_encode([
-    'success'        => true,
-    'totalUsers'     => $totalUsers,
-    'totalMoods'     => $totalMoods,
-    'totalPosts'     => $totalPosts,
-    'topMood'        => $topMood,
-    'newUsers'       => $newUsers,
-    'moodBreakdown'  => $moodBreakdown,
-    'recentUsers'    => $recentUsers,
+    'success'           => true,
+    'totalUsers'        => $totalUsers,
+    'totalMoods'        => $totalMoods,
+    'totalPosts'        => $totalPosts,
+    'topMood'           => $topMood,
+    'newUsers'          => $newUsers,
+    'moodBreakdown'     => $moodBreakdown,
+    'recentUsers'       => $recentUsers,
+    'experimentResults' => $experimentResults,
+    'pageFunnel'        => $pageFunnel,
+    'topClicks'         => $topClicks,
+    'dailyActivity'     => $dailyActivity,
 ]);

@@ -2,8 +2,9 @@
 
 **Project:** MindSpace - Youth Mental Health Platform  
 **Implementation Status:** ✅ PRODUCTION READY  
-**Version:** 1.0.0  
-**Date:** March 8, 2026
+**Version:** 2.0.0  
+**Date:** March 14, 2026  
+**Changelog:** Added multi-experiment A/B engine, dashboard nudge experiment (Experiment 4), full-site telemetry funnel, admin empirical dashboard, and v2 database migration.
 
 ---
 
@@ -56,7 +57,18 @@ This is called an **A/B test**, and it's built into our platform.
 
 ## 🗄️ How We Store Data
 
-We use three main tables in our database to track everything:
+We use **five** main tables and three analytical views in our database to track everything:
+
+| Table / View | Purpose |
+|---|---|
+| `telemetry_logs` | Stores every anonymous event (page views, clicks, dwell time, scroll depth, etc.) |
+| `ab_test_assignments` | Records which experiment variant each session was assigned to |
+| `moods` | Mood check-in records — linked to sessions and A/B variants |
+| `experiments_config` *(v2)* | Central registry of all A/B experiments and their status |
+| `user_sessions` *(v2)* | Cross-page funnel tracking — entry page, pages visited, conversions |
+| `v_experiment_summary` *(view)* | Live conversion rates per experiment and variant |
+| `v_daily_page_views` *(view)* | Page views and dwell time per page per day |
+| `v_helpline_engagement` *(view)* | Helpline click counts and unique sessions per number |
 
 ---
 
@@ -220,6 +232,11 @@ When you visit the page:
 ---
 
 ## 📊 Our First Experiment: Testing Check-in Layouts
+## 🧪 Active Experiments (v2)
+
+As of v2.0, the platform runs **three concurrent A/B experiments** through a shared multi-experiment engine (`php/ab_test_api.php`). Each experiment is registered in the `experiments_config` table and can be queried independently via `?experiment=<name>`.
+
+### Experiment 1: Check-In Layout (Original)
 
 ### The Question We're Asking
 
@@ -353,7 +370,7 @@ Result: "Layout B has 15% higher completion rate - let's use it!"
 
 ## 🔮 Future Experiments We Plan
 
-### Experiment 2: Resource Page Engagement
+### Experiment 2 (Planned): Resource Page Engagement
 
 **Question:** Do users who spend more time on the resources page actually call helplines more often?
 
@@ -365,6 +382,21 @@ Result: "Layout B has 15% higher completion rate - let's use it!"
 **Why it matters:** If spending time reading resources leads to help-seeking, we should make resources more engaging.
 
 ### Experiment 3: Journal Notes and Return Visits
+### Experiment 3 (Active): Resources Page Layout
+
+**Question:** Does a card-grid layout for helpline listings get more clicks than the current list layout?
+
+**How we test:**
+- Variant A: Current list layout with phone links (control)
+- Variant B: Card grid layout with prominent call-to-action buttons
+- Tracked in `ab_test_assignments` under `resources_layout_test`
+- Target: 400 users per variant
+
+**Why it matters:** If a more visual layout makes helplines easier to find, more users in crisis will reach out.
+
+---
+
+### Experiment 3b (Planned): Journal Notes and Return Visits
 
 **Question:** Do users who write journal notes come back to the site more often?
 
@@ -376,15 +408,28 @@ Result: "Layout B has 15% higher completion rate - let's use it!"
 **Why it matters:** If writing notes helps people engage more, we could encourage note-taking.
 
 ### Experiment 4: Dashboard Visualizations
+### Experiment 4 (Active): Dashboard Nudge Banner
 
-**Question:** Do interactive charts on the dashboard bring users back more than static images?
+**Question:** Does showing a streak-goal banner and motivational nudge on the dashboard increase return visits compared to no banner?
 
-**How we'll test:**
-- Show half of users interactive charts they can click
-- Show other half static images
-- Track which group returns more often
+**How we test:**
+- Variant A: Standard dashboard — static mood summary chart only (control)
+- Variant B: Adds a green nudge banner at the top of the dashboard: streak goal, motivational message, and a "Check In" CTA button
+- The CTA click is tracked as a `click` event (`nudge_banner_cta`)
+- Page dwell time is also captured on unload for both variants
+- Tracked in `ab_test_assignments` under `dashboard_nudge_test`
+- Target: 400 users per variant
 
-**Why it matters:** Helps us decide if building fancy visualizations is worth the effort.
+**What the nudge looks like (Variant B):**
+```
+┌────────────────────────────────────────────────────┐
+│  🔥  Keep your streak going!                       │
+│      Check in today to maintain your streak.       │
+│      Every day counts.           [+ Check In]      │
+└────────────────────────────────────────────────────┘
+```
+
+**Why it matters:** Return visits mean more consistent mood tracking, which leads to better mental health awareness for the user.
 
 ---
 
@@ -392,11 +437,17 @@ Result: "Layout B has 15% higher completion rate - let's use it!"
 
 ### How to See Empirical Investigation in Action
 
-**Step 1: Set up the database**
+**Step 1: Set up the v1 database**
 1. Open phpMyAdmin in your browser
 2. Go to the SQL tab
 3. Paste the contents of `database/migration_telemetry.sql`
 4. Click "Go" to run the migration
+
+**Step 1b: Apply the v2 migration (new in v2.0)**
+1. In phpMyAdmin, go to the SQL tab
+2. Paste the contents of `database/migration_empirical_v2.sql`
+3. Click "Go" to run it
+4. This adds: expanded event types, `experiments_config`, `user_sessions`, and three analytical views
 
 **Step 2: Verify it's working**
 1. Visit: `http://localhost/mindspace-ug/install_check.php`
@@ -412,7 +463,7 @@ Result: "Layout B has 15% higher completion rate - let's use it!"
 **Step 4: See the data**
 Open phpMyAdmin and run:
 ```sql
--- See recent tracking logs
+-- See recent tracking logs (now includes scroll_depth, experiment_exposure, etc.)
 SELECT * FROM telemetry_logs ORDER BY created_at DESC LIMIT 10;
 
 -- See experiment results so far
@@ -420,22 +471,53 @@ SELECT variant, COUNT(*) as users, SUM(converted) as completions
 FROM ab_test_assignments
 WHERE experiment_name = 'checkin_layout_test'
 GROUP BY variant;
+
+-- NEW: See all active experiments and live conversion rates
+SELECT * FROM v_experiment_summary;
+
+-- NEW: See page funnel (which pages have most unique visitors)
+SELECT * FROM v_daily_page_views ORDER BY day DESC, unique_sessions DESC;
+
+-- NEW: See which helplines are clicked most
+SELECT * FROM v_helpline_engagement;
+
+-- NEW: See dashboard nudge experiment results
+SELECT variant, COUNT(*) as users, SUM(converted) as completions,
+       ROUND(SUM(converted)*100.0/COUNT(*),1) AS conversion_rate
+FROM ab_test_assignments
+WHERE experiment_name = 'dashboard_nudge_test'
+GROUP BY variant;
 ```
+
+**Step 5: View the admin empirical dashboard**
+1. Visit: `http://localhost/mindspace-ug/admin/index.html`
+2. Scroll down to see:
+   - **A/B Experiment Results** — live conversion rates for all 3 experiments, with leading variant highlighted and sample size progress
+   - **Page Funnel** — unique sessions and average dwell time per page (last 30 days)
+   - **Daily Active Sessions** — line chart of the last 14 days of activity
 
 ### Files Involved in Tracking
 
 **Backend (PHP):**
-- `php/telemetry.php` - Receives and saves tracking data
-- `php/ab_test_api.php` - Assigns users to experiment groups
+- `php/telemetry.php` - Receives and saves tracking data (now supports 9 event types)
+- `php/ab_test_api.php` - Multi-experiment engine: assigns variants, logs exposure events
 - `php/checkin.php` - Saves mood check-ins with experiment info
+- `admin/admin_data.php` - Returns experiment results, page funnel, and daily activity to the admin panel
 
 **Frontend (HTML/JavaScript):**
 - `checkin.html` - Has both Layout A and Layout B, shows correct one based on assignment
 - `resources.html` - Tracks which helpline buttons users click
+- `dashboard.html` - Participates in `dashboard_nudge_test`; logs page views and dwell time
+- `community.html` - Now logs page views and dwell time (new in v2.0)
+- `profile.html` - Now logs page views and dwell time (new in v2.0)
+- `admin/index.html` - Admin empirical dashboard: experiment cards, page funnel, activity chart
 
 **Database (SQL):**
 - `database/telemetry_schema.sql` - Creates the tracking tables
 - `database/migration_telemetry.sql` - Updates existing databases
+- `database/migration_empirical_v2.sql` - *(new)* Adds `experiments_config`, `user_sessions`, expanded event types, and 3 analytical views
+
+---
 
 **Verification:**
 - `install_check.php` - Tests that everything is set up correctly
@@ -492,17 +574,19 @@ Every improvement we make through data-driven decisions helps us serve Ugandan y
 
 ## 📋 Appendix: Files Used in Empirical Investigation
 
-### Core Code Files (4 files)
+### Core Code Files (6 files)
 
 1. **php/telemetry.php**
    - Receives tracking data from the website
    - Validates and saves it to database
    - Keeps everything anonymous and secure
+   - **v2:** Accepts 9 event types: `page_view`, `click`, `dwell_time`, `form_interaction`, `resource_access`, `scroll_depth`, `search`, `navigation`, `experiment_exposure`
 
 2. **php/ab_test_api.php**
-   - Decides which users see Layout A vs Layout B
-   - Random 50/50 assignment (like coin flip)
-   - Remembers user's assignment during their session
+   - **v2 rewrite:** Multi-experiment engine — supports any number of named experiments
+   - Call with `?experiment=<name>` to get assignment for a specific experiment
+   - Logs an `experiment_exposure` telemetry event on every assignment lookup
+   - Uses `random_int()` for cryptographically secure 50/50 split
 
 3. **database/telemetry_schema.sql**
    - Creates the database tables for tracking
@@ -513,7 +597,20 @@ Every improvement we make through data-driven decisions helps us serve Ugandan y
    - Updates existing databases with new tracking tables
    - Safe to run on databases that already have data
 
-### Modified Website Pages (2 files)
+5. **database/migration_empirical_v2.sql** *(new)*
+   - Expands `event_type` ENUM with 4 new values
+   - Creates `experiments_config` table — single source of truth for all experiments
+   - Creates `user_sessions` table — cross-page funnel tracking
+   - Creates 3 analytical SQL views for fast reporting
+   - Seeds the three active experiments into `experiments_config`
+
+6. **admin/admin_data.php** *(enhanced)*
+   - Returns A/B experiment results (conversion rates per variant for all experiments)
+   - Returns page funnel data (unique sessions + avg dwell per page, last 30 days)
+   - Returns top clicked elements (last 30 days)
+   - Returns daily active sessions (last 14 days)
+
+### Modified Website Pages (5 files, was 2)
 
 1. **checkin.html**
    - Shows different layouts based on A/B test assignment
@@ -525,6 +622,21 @@ Every improvement we make through data-driven decisions helps us serve Ugandan y
    - Logs page views and time spent reading resources
    - Uses anonymous beacon API for accurate tracking
 
+3. **dashboard.html** *(enhanced)*
+   - Participates in `dashboard_nudge_test` (Experiment 4)
+   - Variant B: injects a streak-goal nudge banner with a Check-In CTA
+   - Logs `page_view` with variant context on load
+   - Logs `click` when nudge CTA is clicked
+   - Logs `dwell_time` via `sendBeacon` on page unload
+
+4. **community.html** *(new tracking)*
+   - Logs `page_view` on load with `page_type: community`
+   - Logs `dwell_time` on unload
+
+5. **profile.html** *(new tracking)*
+   - Logs `page_view` on load with `page_type: profile`
+   - Logs `dwell_time` on unload
+
 ### Verification Tool (1 file)
 
 1. **install_check.php**
@@ -532,4 +644,11 @@ Every improvement we make through data-driven decisions helps us serve Ugandan y
    - Verifies tracking is working
    - Shows green checkmarks if everything is OK
 
-**Total:** About 800 lines of code for the entire empirical investigation system
+### Admin Empirical Dashboard (1 file)
+
+1. **admin/index.html** *(enhanced)*
+   - **A/B Experiment Results section:** shows conversion rates for all active experiments, highlights the leading variant, and displays sample-size progress toward 800 users
+   - **Page Funnel section:** table of top pages by unique sessions with average dwell time
+   - **Daily Active Sessions chart:** line chart of the last 14 days powered by Chart.js
+
+**Total:** Approximately 1,400+ lines of code for the entire empirical investigation system (v2)

@@ -227,6 +227,23 @@
 
     // ── Initialize ─────────────────────────────────────────────
     checkAuth();
+
+    // ── Telemetry: page view + dwell time ─────────────────────
+    const _profilePageLoad = Date.now();
+    fetch('php/telemetry.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: 'page_view', page_url: window.location.pathname, metadata: { page_type: 'profile' } })
+    }).catch(() => {});
+    window.addEventListener('beforeunload', () => {
+      const dwell = Math.floor((Date.now() - _profilePageLoad) / 1000);
+      if (dwell > 0) {
+        navigator.sendBeacon('php/telemetry.php', JSON.stringify({
+          event_type: 'dwell_time', page_url: window.location.pathname,
+          dwell_seconds: dwell, metadata: { page_type: 'profile' }
+        }));
+      }
+    });
   </script>
 </body>
 </html>
