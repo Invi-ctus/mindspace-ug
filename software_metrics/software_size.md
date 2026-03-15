@@ -1,6 +1,5 @@
 # Chapter 5: Software Size Metrics
 ## MindSpace — Youth Mental Health Web Application
-**SWE 2204 Software Metrics | MUST BSE 2024 |**
 
 ---
 
@@ -212,7 +211,3 @@ All size metrics are stored in MySQL and visualized in:
 | Function Points FP | Ratio | 0 = no functionality |
 
 ---
-
-*Course: SWE 2204 Software Metrics — MUST BSE 2024*
-*Chapter 5: Measuring Internal Product Attributes — Software Size*
-*Implementation: metrics/size_dashboard.php + metrics/halstead_metrics.php*
