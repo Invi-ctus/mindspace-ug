@@ -1,6 +1,4 @@
-# Chapter 6: Structural Complexity Metrics
-## MindSpace — Youth Mental Health Web Application
-**SWE 2204 Software Metrics | MUST BSE 2024 |**
+# Measuring internal product attributes: Software Complexity 
 ---
 
 ## 1. Overview
@@ -250,6 +248,3 @@ All complexity metrics are stored in MySQL and visualized in:
 
 ---
 
-*Course: SWE 2204 Software Metrics — MUST BSE 2024*
-*Chapter 6: Measuring Internal Product Attributes — Structural Complexity*
-*Implementation: metrics/complexity_dashboard.php*
