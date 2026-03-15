@@ -1,14 +1,4 @@
-# MindSpace — Software Metrics (SWE 2204)
-
----
-
-## Week 7 — Chapter 5: Software Size Metrics
-
-### Measurement Goal (GQIM Step 5)
-- **Object of Interest:** MindSpace source code (PHP and JS files)
-- **Purpose:** Evaluate physical and functional size to track productivity and quality
-- **Perspective:** From the viewpoint of the developer (Frank Murungi)
-- **Environment:** MUST BSE 2024, PHP/MySQL, XAMPP localhost, March 2026
+## Software Size Metrics
 
 ### LOC Measurements
 | File | Total LOC | NCLOC | CLOC | Comment Density |
@@ -70,13 +60,12 @@
 
 ---
 
-## Week 8 — Chapter 6: Structural Complexity Metrics
+## Structural Complexity Metrics
 
 ### Measurement Goal (GQIM Step 5)
 - **Object of Interest:** MindSpace PHP module structure
 - **Purpose:** Evaluate structural complexity to identify risky modules and guide testing
 - **Perspective:** From the viewpoint of the developer and code reviewer
-- **Environment:** MUST BSE 2024, PHP/MySQL, XAMPP localhost, March 2026
 
 ### Cyclomatic Complexity — v(G) = 1 + d
 d = number of decision points (if, elseif, while, for, foreach, case, &&, ||)
