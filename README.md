@@ -47,6 +47,10 @@ mindspace/
 │   └── dashboard_data.php  # Dashboard JSON API
 ├── database/
 │   └── mindspace.sql       # Full database schema + sample data
+│   └── migration_cost_metrics.sql # Cost tracking schema + demo seed data
+├── metrics/
+│   ├── cost_dashboard.php  # Chapter 7 cost metrics dashboard (COCOMO/SLIM)
+│   └── cost_data.php       # Cost metrics JSON API for dashboard
 ├── METRICS.md              # (reserved for metrics)
 └── README.md               # This file
 ```
@@ -91,6 +95,32 @@ Open your browser and visit:
 ```
 http://localhost/mindspace-ug/
 ```
+
+### 4.1 Enable Software Cost Metrics (optional but recommended)
+
+To enable the admin cost dashboard (planned vs actual cost, estimate variance, rework %, FP/hour):
+
+1. Open phpMyAdmin
+2. Select database: `mindspace_db`
+3. Import file: `database/migration_cost_metrics.sql`
+4. Refresh `admin/index.html`
+
+If you skip this step, the admin panel still works and shows a setup hint for cost metrics.
+
+### 4.2 Open Cost Metrics Dashboard
+
+After import, open:
+
+```
+http://localhost/mindspace-ug/metrics/cost_dashboard.php
+```
+
+Dashboard includes:
+- Cost KPI cards (actual cost, variance, rework, cost/FP)
+- Cost trend chart and feature breakdown table
+- COCOMO (Basic/Intermediate) calculator
+- COCOMO II (Application Composition, Early Design, Post-Architecture) calculator
+- SLIM (Putnam-style constraint) calculator
 
 ### 5. Demo account
 

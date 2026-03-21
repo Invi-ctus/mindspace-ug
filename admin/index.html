@@ -98,6 +98,42 @@
       </div>
     </div>
 
+    <!-- ── Software Cost KPI cards ── -->
+    <div style="margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin-bottom:0.8rem; color:#2d3436;">
+        <i class="fa-solid fa-sack-dollar" style="color:#2E7D32;"></i> Software Cost Metrics
+      </h3>
+      <div class="admin-stats">
+        <div class="admin-stat-card" style="background:#E8F5E9;">
+          <div class="asc-value" id="costActual">UGX 0</div>
+          <div class="asc-label">
+            <i class="fa-solid fa-coins"></i> Actual Cost
+          </div>
+        </div>
+        <div class="admin-stat-card yellow" style="background:#FFF8E1;">
+          <div class="asc-value" id="costVariance">0.0%</div>
+          <div class="asc-label">
+            <i class="fa-solid fa-scale-balanced"></i> Estimate Variance
+          </div>
+        </div>
+        <div class="admin-stat-card blue" style="background:#E3F2FD;">
+          <div class="asc-value" id="costRework">0.0%</div>
+          <div class="asc-label">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Rework Rate
+          </div>
+        </div>
+        <div class="admin-stat-card purple" style="background:#F3E5F5;">
+          <div class="asc-value" id="costFpEfficiency">N/A</div>
+          <div class="asc-label">
+            <i class="fa-solid fa-gauge-high"></i> FP per Hour
+          </div>
+        </div>
+      </div>
+      <p id="costInstallHint" style="display:none; margin:0.8rem 0 0; color:#636e72; font-size:0.85rem;">
+        Cost metrics are not active yet. Run database/migration_cost_metrics.sql and refresh this page.
+      </p>
+    </div>
+
     <!-- Two-column lower section -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
 
@@ -188,6 +224,39 @@
       <p id="activityEmpty" style="display:none; text-align:center; color:#b2bec3;">No telemetry data yet. Run the v2 migration first.</p>
     </div>
 
+    <!-- ── Cost trend and feature efficiency ── -->
+    <div style="display:grid; grid-template-columns:1.05fr 1fr; gap:1.5rem; margin-top:1.5rem;">
+      <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+          <i class="fa-solid fa-chart-area" style="color:#00897B;"></i> Daily Engineering Cost Trend
+        </h3>
+        <canvas id="costTrendChart" style="max-height:220px;"></canvas>
+        <p id="costTrendEmpty" style="display:none; text-align:center; color:#b2bec3; margin-top:0.8rem;">
+          No cost entries yet. Add rows to cost_tracking after running the migration.
+        </p>
+      </div>
+
+      <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+          <i class="fa-solid fa-ranking-star" style="color:#00897B;"></i> Highest Cost Features
+        </h3>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Actual Cost</th>
+                <th>Variance</th>
+              </tr>
+            </thead>
+            <tbody id="costFeatureBody">
+              <tr><td colspan="3" style="text-align:center; color:#b2bec3;">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- SWE 2204 Software Metrics Links — Added Week 7 & 8 -->
     <div style="margin:24px 0; padding:20px; background:#E8F5E9; border-radius:12px; border:1px solid #4CAF50;">
       <h3 style="color:#4CAF50; margin-bottom:14px; font-family:Poppins,sans-serif;">
@@ -209,6 +278,14 @@
           <div style="font-size:1.5rem;">🔀</div>
           <div style="font-weight:600; margin:4px 0;">Structural Complexity</div>
           <div style="font-size:.8rem; color:#636e72;">Chapter 6 — v(G), Cohesion, Coupling</div>
+        </a>
+        <a href="../metrics/cost_dashboard.php"
+           style="display:block; padding:14px; background:#fff; border-radius:8px;
+                  border:2px solid #4CAF50; text-decoration:none; color:#2d3436;
+                  font-family:Poppins,sans-serif; text-align:center;">
+          <div style="font-size:1.5rem;">💰</div>
+          <div style="font-weight:600; margin:4px 0;">Software Cost Metrics</div>
+          <div style="font-size:.8rem; color:#636e72;">Chapter 7 — COCOMO, COCOMO II, SLIM</div>
         </a>
       </div>
       <p style="font-size:.78rem; color:#636e72; margin-top:10px; font-family:Poppins,sans-serif;">
@@ -310,6 +387,9 @@
 
         // ── Daily Activity Chart ───────────────────────────
         renderActivityChart(data.dailyActivity || []);
+
+        // ── Software Cost Metrics ──────────────────────────
+        renderCostMetrics(data.costSummary || null, data.costByFeature || [], data.costTrend || []);
 
       } catch (err) {
         console.error('Admin load error:', err);
@@ -425,5 +505,108 @@
         }
       });
     }
+
+    function formatCurrency(value) {
+      const amount = Number(value || 0);
+      return `UGX ${amount.toLocaleString('en-UG', { maximumFractionDigits: 2 })}`;
+    }
+
+    function setCostFallbackState() {
+      document.getElementById('costActual').textContent = 'UGX 0';
+      document.getElementById('costVariance').textContent = '0.0%';
+      document.getElementById('costRework').textContent = '0.0%';
+      document.getElementById('costFpEfficiency').textContent = 'N/A';
+      document.getElementById('costInstallHint').style.display = 'block';
+      document.getElementById('costFeatureBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#b2bec3;">Run migration_cost_metrics.sql to enable this table.</td></tr>';
+      document.getElementById('costTrendChart').style.display = 'none';
+      document.getElementById('costTrendEmpty').style.display = 'block';
+    }
+
+    function renderCostFeatureTable(rows) {
+      const body = document.getElementById('costFeatureBody');
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#b2bec3;">No cost records yet.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = rows.map(row => {
+        const variance = Number(row.effort_variance_pct || 0);
+        const varianceColor = variance > 0 ? '#d84315' : '#2E7D32';
+        const variancePrefix = variance > 0 ? '+' : '';
+        return `
+          <tr>
+            <td><strong>${row.feature_name}</strong></td>
+            <td>${formatCurrency(row.actual_cost)}</td>
+            <td style="color:${varianceColor}; font-weight:600;">${variancePrefix}${variance.toFixed(1)}%</td>
+          </tr>`;
+      }).join('');
+    }
+
+    let costTrendChartInstance = null;
+    function renderCostTrendChart(rows) {
+      if (!rows.length) {
+        document.getElementById('costTrendChart').style.display = 'none';
+        document.getElementById('costTrendEmpty').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('costTrendChart').style.display = 'block';
+      document.getElementById('costTrendEmpty').style.display = 'none';
+
+      const labels = rows.map(r => new Date(r.day + 'T00:00:00').toLocaleDateString('en-UG', { month: 'short', day: 'numeric' }));
+      const values = rows.map(r => Number(r.daily_actual_cost || 0));
+
+      if (costTrendChartInstance) costTrendChartInstance.destroy();
+      costTrendChartInstance = new Chart(document.getElementById('costTrendChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Engineering Cost (UGX)',
+            data: values,
+            backgroundColor: '#26A69A',
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                font: { family: 'Poppins' },
+                callback: (value) => `UGX ${Number(value).toLocaleString('en-UG')}`
+              }
+            },
+            x: { ticks: { font: { family: 'Poppins', size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderCostMetrics(summary, byFeature, trend) {
+      if (!summary || !summary.available) {
+        setCostFallbackState();
+        return;
+      }
+
+      document.getElementById('costInstallHint').style.display = 'none';
+
+      document.getElementById('costActual').textContent = formatCurrency(summary.total_actual_cost);
+
+      const variance = Number(summary.cost_variance_pct || 0);
+      const variancePrefix = variance > 0 ? '+' : '';
+      document.getElementById('costVariance').textContent = `${variancePrefix}${variance.toFixed(1)}%`;
+
+      document.getElementById('costRework').textContent = `${Number(summary.rework_pct || 0).toFixed(1)}%`;
+      document.getElementById('costFpEfficiency').textContent = summary.fp_per_hour === null
+        ? 'N/A'
+        : `${Number(summary.fp_per_hour).toFixed(3)} FP/h`;
+
+      renderCostFeatureTable(byFeature);
+      renderCostTrendChart(trend);
+    }
+  </script>
 </body>
 </html>

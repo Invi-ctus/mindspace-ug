@@ -17,6 +17,16 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../php/db.php';
 
+/**
+ * Check table existence for safe optional metrics.
+ */
+function tableExists(PDO $pdo, string $tableName): bool
+{
+    $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+    $stmt->execute([$tableName]);
+    return (bool) $stmt->fetchColumn();
+}
+
 // ── 1. Total registered users ──────────────────────────────────
 $stmt       = $pdo->query('SELECT COUNT(*) AS total FROM users');
 $totalUsers = (int) $stmt->fetchColumn();
@@ -161,6 +171,128 @@ try {
     $dailyActivity = [];
 }
 
+// ── 12. Cost metrics summary (software cost tracking) ─────────
+$costSummary = [
+    'available'            => false,
+    'entry_count'          => 0,
+    'total_planned_hours'  => 0.0,
+    'total_actual_hours'   => 0.0,
+    'total_planned_cost'   => 0.0,
+    'total_actual_cost'    => 0.0,
+    'cost_variance_pct'    => 0.0,
+    'rework_pct'           => 0.0,
+    'avg_cost_per_feature' => 0.0,
+    'fp_per_hour'          => null,
+    'cost_per_fp'          => null,
+];
+
+$costByFeature = [];
+$costTrend     = [];
+
+if (tableExists($pdo, 'cost_tracking')) {
+    try {
+        $stmt = $pdo->query(
+            "SELECT
+                COUNT(*) AS entry_count,
+                ROUND(COALESCE(SUM(planned_hours), 0), 2) AS total_planned_hours,
+                ROUND(COALESCE(SUM(actual_hours), 0), 2) AS total_actual_hours,
+                ROUND(COALESCE(SUM(planned_hours * hourly_rate), 0), 2) AS total_planned_cost,
+                ROUND(COALESCE(SUM(actual_hours * hourly_rate), 0), 2) AS total_actual_cost,
+                ROUND(COALESCE(SUM(rework_hours), 0), 2) AS total_rework_hours,
+                COUNT(DISTINCT feature_name) AS feature_count
+             FROM cost_tracking"
+        );
+        $summaryRow = $stmt->fetch() ?: [];
+
+        $plannedCost = (float) ($summaryRow['total_planned_cost'] ?? 0);
+        $actualCost  = (float) ($summaryRow['total_actual_cost'] ?? 0);
+        $actualHours = (float) ($summaryRow['total_actual_hours'] ?? 0);
+        $reworkHours = (float) ($summaryRow['total_rework_hours'] ?? 0);
+        $featureCnt  = (int) ($summaryRow['feature_count'] ?? 0);
+
+        $costSummary = [
+            'available'            => true,
+            'entry_count'          => (int) ($summaryRow['entry_count'] ?? 0),
+            'total_planned_hours'  => (float) ($summaryRow['total_planned_hours'] ?? 0),
+            'total_actual_hours'   => $actualHours,
+            'total_planned_cost'   => $plannedCost,
+            'total_actual_cost'    => $actualCost,
+            'cost_variance_pct'    => $plannedCost > 0 ? round((($actualCost - $plannedCost) / $plannedCost) * 100, 2) : 0.0,
+            'rework_pct'           => $actualHours > 0 ? round(($reworkHours / $actualHours) * 100, 2) : 0.0,
+            'avg_cost_per_feature' => $featureCnt > 0 ? round($actualCost / $featureCnt, 2) : 0.0,
+            'fp_per_hour'          => null,
+            'cost_per_fp'          => null,
+        ];
+    } catch (PDOException $e) {
+        $costSummary['available'] = false;
+    }
+
+    try {
+        $stmt = $pdo->query(
+            "SELECT
+                feature_name,
+                ROUND(SUM(planned_hours), 2) AS planned_hours,
+                ROUND(SUM(actual_hours), 2) AS actual_hours,
+                ROUND(SUM(actual_hours * hourly_rate), 2) AS actual_cost,
+                ROUND(SUM(rework_hours), 2) AS rework_hours,
+                ROUND(
+                    CASE
+                        WHEN SUM(planned_hours) > 0 THEN ((SUM(actual_hours) - SUM(planned_hours)) / SUM(planned_hours)) * 100
+                        ELSE 0
+                    END,
+                    2
+                ) AS effort_variance_pct
+             FROM cost_tracking
+             GROUP BY feature_name
+             ORDER BY actual_cost DESC
+             LIMIT 10"
+        );
+        $costByFeature = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        $costByFeature = [];
+    }
+
+    try {
+        $stmt = $pdo->query(
+            "SELECT
+                DATE(measured_date) AS day,
+                ROUND(SUM(actual_hours * hourly_rate), 2) AS daily_actual_cost
+             FROM cost_tracking
+             GROUP BY DATE(measured_date)
+             ORDER BY day ASC"
+        );
+        $costTrend = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        $costTrend = [];
+    }
+
+    if (tableExists($pdo, 'fp_measurements')) {
+        try {
+            $stmt = $pdo->query(
+                "SELECT
+                    ROUND(SUM(fp.fp_points), 2) AS total_fp,
+                    ROUND(SUM(ct.actual_hours), 2) AS total_actual_hours,
+                    ROUND(SUM(ct.actual_hours * ct.hourly_rate), 2) AS total_actual_cost
+                 FROM cost_tracking ct
+                 LEFT JOIN fp_measurements fp ON fp.feature_name = ct.feature_name"
+            );
+            $fpRow = $stmt->fetch() ?: [];
+            $totalFp = (float) ($fpRow['total_fp'] ?? 0);
+            $totalHours = (float) ($fpRow['total_actual_hours'] ?? 0);
+            $totalCost = (float) ($fpRow['total_actual_cost'] ?? 0);
+
+            if ($totalFp > 0) {
+                $costSummary['cost_per_fp'] = round($totalCost / $totalFp, 2);
+            }
+            if ($totalHours > 0) {
+                $costSummary['fp_per_hour'] = round($totalFp / $totalHours, 3);
+            }
+        } catch (PDOException $e) {
+            // Keep FP-derived metrics null if FP table exists but query fails.
+        }
+    }
+}
+
 echo json_encode([
     'success'           => true,
     'totalUsers'        => $totalUsers,
@@ -174,4 +306,7 @@ echo json_encode([
     'pageFunnel'        => $pageFunnel,
     'topClicks'         => $topClicks,
     'dailyActivity'     => $dailyActivity,
+    'costSummary'       => $costSummary,
+    'costByFeature'     => $costByFeature,
+    'costTrend'         => $costTrend,
 ]);
