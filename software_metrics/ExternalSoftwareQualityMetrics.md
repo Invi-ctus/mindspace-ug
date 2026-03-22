@@ -155,7 +155,6 @@ json
   "portability": 0.8
 }
  Operational Workflow
-
 The system operates through the following sequence:
 
 1. The user inputs performance and usage data through the frontend interface
