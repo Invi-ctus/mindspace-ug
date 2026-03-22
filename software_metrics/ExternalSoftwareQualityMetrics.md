@@ -12,10 +12,7 @@ By integrating this module into the Mindspace platform, the system is enhanced w
  Measure system performance under operational conditions
  Provide objective, data-driven insights into software quality
 
-
-
  Objective
-
 The primary objective of this module is to operationalize theoretical quality models into a working, measurable system.
 
 Specifically, the system aims to:
