@@ -54,7 +54,9 @@ This module implements a wide range of metrics corresponding to external product
  1. Reliability
 Reliability measures the system’s ability to perform its intended function consistently over time without failure.
 Metrics implemented:
+
 Failure Rate
+
   Represents how frequently the system fails during operation.
   Formula:
   Failure Rate = Number of Failures / Operating Time
@@ -67,7 +69,7 @@ Availability
   Formula:
   Availability = MTBF / (MTBF + MTTR)
 These metrics collectively provide a strong indication of system stability and dependability.
- 2. Usability
+ 3. Usability
 Usability evaluates how effectively and efficiently users can interact with the system.
 Metrics implemented:
 
