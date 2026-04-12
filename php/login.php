@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // ── Load database connection ───────────────────────────────────
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/reliability.php';
 
 // ── Helper: redirect back with error ──────────────────────────
 function redirectError(string $message): void
@@ -40,22 +41,31 @@ $password = $_POST['password']      ?? '';
 
 // ── 2. Basic validation ────────────────────────────────────────
 if (empty($email) || empty($password)) {
+    logFailure('validation_error', 'auth', 'Missing email or password');
     redirectError('Please enter your email and password.');
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    logFailure('validation_error', 'auth', 'Invalid email format: ' . $email);
     redirectError('Please enter a valid email address.');
 }
 
 // ── 3. Look up the user by email ──────────────────────────────
-$stmt = $pdo->prepare('SELECT id, username, password FROM users WHERE email = ? LIMIT 1');
-$stmt->execute([$email]);
-$user = $stmt->fetch();
+try {
+    $stmt = $pdo->prepare('SELECT id, username, password FROM users WHERE email = ? LIMIT 1');
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+} catch (PDOException $e) {
+    logFailure('db_error', 'auth', 'Database error during login');
+    error_log('[MindSpace Login DB Error] ' . $e->getMessage());
+    redirectError('System error. Please try again later.');
+}
 
 // ── 4. Verify the password hash ───────────────────────────────
 // Using password_verify() is the safe way — never compare hashes directly.
 if (!$user || !password_verify($password, $user['password'])) {
     // Generic message: don't specify whether email or password was wrong
+    logFailure('login_error', 'auth', 'Failed login attempt for: ' . $email);
     redirectError('Invalid email or password. Please try again.');
 }
 

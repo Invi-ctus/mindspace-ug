@@ -23,8 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// ── Load DB ────────────────────────────────────────────────────
+// ── Load DB and Reliability Module ────────────────────────────────
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/reliability.php';
 
 // ── Helper: redirect with error ────────────────────────────────
 function redirectError(string $msg): void
@@ -79,6 +80,7 @@ $mood         = trim($_POST['mood'] ?? '');
 $note         = trim($_POST['note'] ?? '');
 
 if (!in_array($mood, $allowedMoods, true)) {
+    logFailure('validation_error', 'checkin', 'Invalid mood selection: ' . $mood);
     redirectError('Please select a valid mood before submitting.');
 }
 
@@ -90,17 +92,23 @@ if (mb_strlen($note) > 500) {
 $userId = (int) $_SESSION['user_id'];
 
 // ── 2. Save to database with A/B test tracking ────────────────
-$stmt = $pdo->prepare(
-    'INSERT INTO moods (user_id, mood, note, session_id, ab_variant) 
-     VALUES (?, ?, ?, ?, ?)'
-);
-$stmt->execute([
-    $userId,
-    $mood,
-    $note ?: null,
-    $sessionId,
-    $abVariant
-]);
+try {
+    $stmt = $pdo->prepare(
+        'INSERT INTO moods (user_id, mood, note, session_id, ab_variant) 
+         VALUES (?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([
+        $userId,
+        $mood,
+        $note ?: null,
+        $sessionId,
+        $abVariant
+    ]);
+} catch (PDOException $e) {
+    logFailure('db_error', 'checkin', 'Error saving mood: ' . $e->getMessage());
+    error_log('[MindSpace Checkin DB Error] ' . $e->getMessage());
+    redirectError('Error saving your mood. Please try again.');
+}
 
 // ── 2b. Update A/B test conversion status ───────────────────────
 try {
