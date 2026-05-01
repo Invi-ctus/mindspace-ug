@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About OO Metrics – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .metrics-doc { background: #fff; border-radius: 14px; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 3px 12px rgba(0,0,0,0.07); }
+    .metric-card { border: 1px solid #eee; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+    .metric-name { font-size: 1.2rem; font-weight: 600; color: #2d3436; margin-bottom: 0.5rem; }
+    .metric-description { color: #636e72; line-height: 1.6; margin-bottom: 1rem; }
+    .metric-formula { background: #f8f9fa; padding: 0.75rem; border-radius: 6px; font-family: monospace; margin-bottom: 0.5rem; }
+    .metric-thresholds { background: #fff3cd; padding: 0.75rem; border-radius: 6px; border-left: 4px solid #ffc107; }
+    .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: #2196F3; text-decoration: none; font-weight: 500; margin-bottom: 1rem; }
+    .back-btn:hover { color: #1976D2; }
+  </style>
+</head>
+<body style="background:#f5f6fa; margin:0;">
+
+  <!-- ═══════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════ -->
+  <aside class="admin-sidebar">
+    <div class="brand">
+      <i class="fa-solid fa-leaf" style="color:#4CAF50;"></i> MindSpace
+      <br /><small style="font-size:0.7rem; color:#636e72; font-weight:400;">Admin Panel</small>
+    </div>
+    <nav style="margin-top:1.5rem;">
+      <a href="index.html">
+        <i class="fa-solid fa-chart-pie"></i> Dashboard
+      </a>
+      <a href="metrics.html">
+        <i class="fa-solid fa-code"></i> OO Metrics
+      </a>
+      <a href="metrics_about.html" class="active">
+        <i class="fa-solid fa-info-circle"></i> About Metrics
+      </a>
+      <a href="../dashboard.html">
+        <i class="fa-solid fa-house"></i> User View
+      </a>
+      <a href="../index.html">
+        <i class="fa-solid fa-globe"></i> Home Page
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ═══════════════════════════════════════
+       MAIN CONTENT
+  ═══════════════════════════════════════ -->
+  <main class="admin-main">
+
+    <!-- Header bar -->
+    <div class="admin-header">
+      <h1><i class="fa-solid fa-info-circle"></i> About Object-Oriented Metrics</h1>
+      <a href="metrics.html" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i> Back to Metrics Dashboard
+      </a>
+    </div>
+
+    <!-- Introduction -->
+    <div class="metrics-doc">
+      <h2 style="color:#2d3436; margin-bottom:1rem;">What are Object-Oriented Metrics?</h2>
+      <p style="color:#636e72; line-height:1.6; font-size:1.1rem;">
+        Object-oriented (OO) metrics measure the quality, complexity, and maintainability of object-oriented software.
+        They help developers identify potential issues, improve code design, and maintain healthy software architecture.
+        The most widely used OO metrics were introduced by Chidamber and Kemerer (CK metrics) in 1994.
+      </p>
+    </div>
+
+    <!-- CK Metrics -->
+    <div class="metrics-doc">
+      <h2 style="color:#2d3436; margin-bottom:1.5rem;">CK Metrics (Chidamber & Kemerer)</h2>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-weight-hanging" style="color:#2196F3;"></i> WMC - Weighted Methods per Class
+        </div>
+        <div class="metric-description">
+          Measures the complexity of a class based on the number and complexity of its methods.
+          A high WMC indicates a class that may be doing too much and should be split.
+        </div>
+        <div class="metric-formula">WMC = Σ complexity(method_i) for all methods in class</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 20 methods = warning, > 50 methods = high risk
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-route" style="color:#4CAF50;"></i> RFC - Response For a Class
+        </div>
+        <div class="metric-description">
+          Counts the number of methods that can be invoked in response to a message sent to an object of the class.
+          It includes methods in the class and methods in other classes that are called.
+        </div>
+        <div class="metric-formula">RFC = M + R (M = methods in class, R = methods called by class)</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 50 = high response complexity
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-puzzle-piece" style="color:#FF9800;"></i> LCOM - Lack of Cohesion of Methods
+        </div>
+        <div class="metric-description">
+          Measures how closely the methods of a class are related to each other.
+          High LCOM indicates methods are not well-related and the class may have multiple responsibilities.
+        </div>
+        <div class="metric-formula">LCOM = |P| - |Q| where P/Q are method pairs sharing attributes</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 0.8 = poor cohesion, > 0.5 = moderate issues
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-link" style="color:#9C27B0;"></i> CBO - Coupling Between Objects
+        </div>
+        <div class="metric-description">
+          Counts the number of other classes to which a class is coupled.
+          High coupling makes classes difficult to change and test.
+        </div>
+        <div class="metric-formula">CBO = number of classes that reference this class</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 5 = high coupling, > 10 = very high coupling
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-sitemap" style="color:#607D8B;"></i> DIT - Depth of Inheritance Tree
+        </div>
+        <div class="metric-description">
+          Measures how deep a class is in the inheritance hierarchy.
+          Deep inheritance can make code harder to understand and maintain.
+        </div>
+        <div class="metric-formula">DIT = number of ancestors</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 5 = deep hierarchy, > 2 = moderate depth
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-users" style="color:#795548;"></i> NOC - Number of Children
+        </div>
+        <div class="metric-description">
+          Counts the number of immediate subclasses of a class.
+          Many children indicate the class is heavily extended.
+        </div>
+        <div class="metric-formula">NOC = number of immediate subclasses</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 10 = heavily extended base class
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Metrics -->
+    <div class="metrics-doc">
+      <h2 style="color:#2d3436; margin-bottom:1.5rem;">Additional Metrics</h2>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-code-branch" style="color:#2196F3;"></i> Number of Methods per Class
+        </div>
+        <div class="metric-description">
+          Simple count of methods in a class. Used as a basic complexity indicator.
+        </div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 20 = too many methods
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-hashtag" style="color:#4CAF50;"></i> Number of Attributes per Class
+        </div>
+        <div class="metric-description">
+          Count of instance variables (properties) in a class.
+        </div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 6 = too many attributes
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-brain" style="color:#FF9800;"></i> Cyclomatic Complexity per Method
+        </div>
+        <div class="metric-description">
+          Measures the number of linearly independent paths through a method's source code.
+          Higher complexity indicates harder to test and maintain code.
+        </div>
+        <div class="metric-formula">CC = E - N + 2P (E=edges, N=nodes, P=paths)</div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 10 = complex method, > 20 = very complex
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-name">
+          <i class="fa-solid fa-file-lines" style="color:#9C27B0;"></i> Lines of Code (LOC) per Class
+        </div>
+        <div class="metric-description">
+          Total number of lines of code in a class. Large classes are harder to understand.
+        </div>
+        <div class="metric-thresholds">
+          <strong>Thresholds:</strong> > 300 LOC = very large class
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Assessment -->
+    <div class="metrics-doc">
+      <h2 style="color:#2d3436; margin-bottom:1rem;">Risk Assessment</h2>
+      <p style="color:#636e72; line-height:1.6; margin-bottom:1.5rem;">
+        Classes are automatically assessed for risk based on metric thresholds:
+      </p>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem;">
+        <div style="background:#E8F5E9; padding:1rem; border-radius:8px; text-align:center;">
+          <i class="fa-solid fa-check-circle" style="font-size:2rem; color:#4CAF50; margin-bottom:0.5rem;"></i>
+          <div style="font-weight:600; color:#2d3436;">Low Risk</div>
+          <div style="font-size:0.9rem; color:#636e72;">Healthy class design</div>
+        </div>
+        <div style="background:#FFF8E1; padding:1rem; border-radius:8px; text-align:center;">
+          <i class="fa-solid fa-exclamation-triangle" style="font-size:2rem; color:#FF9800; margin-bottom:0.5rem;"></i>
+          <div style="font-weight:600; color:#2d3436;">Medium Risk</div>
+          <div style="font-size:0.9rem; color:#636e72;">Needs attention</div>
+        </div>
+        <div style="background:#FFEBEE; padding:1rem; border-radius:8px; text-align:center;">
+          <i class="fa-solid fa-times-circle" style="font-size:2rem; color:#F44336; margin-bottom:0.5rem;"></i>
+          <div style="font-weight:600; color:#2d3436;">High Risk</div>
+          <div style="font-size:0.9rem; color:#636e72;">Requires refactoring</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

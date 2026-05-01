@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OO Metrics Dashboard – MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .metrics-risk-low { color: #4CAF50; }
+    .metrics-risk-medium { color: #FF9800; }
+    .metrics-risk-high { color: #F44336; }
+    .metrics-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .metrics-table th, .metrics-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
+    .metrics-table th { background: #f8f9fa; font-weight: 600; }
+    .run-analysis-btn { background: #4CAF50; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 500; }
+    .run-analysis-btn:hover { background: #45a049; }
+    .run-analysis-btn:disabled { background: #cccccc; cursor: not-allowed; }
+  </style>
+</head>
+<body style="background:#f5f6fa; margin:0;">
+
+  <!-- ═══════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════ -->
+  <aside class="admin-sidebar">
+    <div class="brand">
+      <i class="fa-solid fa-leaf" style="color:#4CAF50;"></i> MindSpace
+      <br /><small style="font-size:0.7rem; color:#636e72; font-weight:400;">Admin Panel</small>
+    </div>
+    <nav style="margin-top:1.5rem;">
+      <a href="index.html">
+        <i class="fa-solid fa-chart-pie"></i> Dashboard
+      </a>
+      <a href="metrics.html" class="active">
+        <i class="fa-solid fa-code"></i> OO Metrics
+      </a>
+      <a href="../dashboard.html">
+        <i class="fa-solid fa-house"></i> User View
+      </a>
+      <a href="../index.html">
+        <i class="fa-solid fa-globe"></i> Home Page
+      </a>
+    </nav>
+
+    <!-- Timestamp -->
+    <div style="position:absolute; bottom:1.5rem; left:1rem; right:1rem; font-size:0.75rem; color:#636e72; border-top:1px solid #3d4447; padding-top:1rem;">
+      Last analysis:<br />
+      <span id="lastAnalysisTime">Never</span>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════
+       MAIN CONTENT
+  ═══════════════════════════════════════ -->
+  <main class="admin-main">
+
+    <!-- Header bar -->
+    <div class="admin-header">
+      <h1><i class="fa-solid fa-code"></i> Object-Oriented Metrics</h1>
+      <div style="display:flex; gap:0.8rem; align-items:center;">
+        <span id="analysisStatus" class="mood-badge mood-neutral" style="font-size:0.82rem;">Ready</span>
+        <button onclick="runAnalysis()" class="run-analysis-btn" id="runBtn">
+          <i class="fa-solid fa-play"></i> Run Analysis
+        </button>
+        <a href="metrics_about.html" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-info-circle"></i> About Metrics
+        </a>
+      </div>
+    </div>
+
+    <!-- Analysis Progress (hidden by default) -->
+    <div id="analysisProgress" style="display:none; background:#fff; border-radius:14px; padding:1.2rem 1.5rem; margin-bottom:1.5rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <div class="spinner"></div>
+        <div>
+          <div style="font-weight:600; color:#2d3436;">Analyzing codebase...</div>
+          <div style="font-size:0.85rem; color:#636e72; margin-top:0.2rem;" id="progressText">Scanning PHP files for classes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Metrics Overview Cards ── -->
+    <div class="admin-stats" id="metricsOverview">
+      <div class="admin-stat-card">
+        <div class="asc-value" id="totalClasses">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-cubes"></i> Total Classes
+        </div>
+      </div>
+      <div class="admin-stat-card yellow">
+        <div class="asc-value" id="totalMethods">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-code-branch"></i> Total Methods
+        </div>
+      </div>
+      <div class="admin-stat-card blue">
+        <div class="asc-value" id="avgComplexity">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-brain"></i> Avg Complexity
+        </div>
+      </div>
+      <div class="admin-stat-card purple">
+        <div class="asc-value" id="highRiskClasses">–</div>
+        <div class="asc-label">
+          <i class="fa-solid fa-exclamation-triangle"></i> High Risk Classes
+        </div>
+      </div>
+    </div>
+
+    <!-- No Data Message -->
+    <div id="noDataMessage" style="background:#fff; border-radius:14px; padding:2rem; margin-bottom:1.5rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); text-align:center; display:none;">
+      <i class="fa-solid fa-chart-line" style="font-size:3rem; color:#ddd; margin-bottom:1rem;"></i>
+      <h3 style="color:#636e72; margin-bottom:0.5rem;">No Metrics Data Available</h3>
+      <p style="color:#999; margin-bottom:1.5rem;">Run your first analysis to see object-oriented metrics for this project.</p>
+      <button onclick="runAnalysis()" class="run-analysis-btn">
+        <i class="fa-solid fa-play"></i> Run First Analysis
+      </button>
+    </div>
+
+    <!-- Two-column charts section -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;" id="chartsSection">
+
+      <!-- ── WMC Distribution Chart ── -->
+      <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+          <i class="fa-solid fa-chart-bar" style="color:#2196F3;"></i> Weighted Methods per Class (WMC)
+        </h3>
+        <canvas id="wmcChart" style="max-height:240px;"></canvas>
+      </div>
+
+      <!-- ── Risk Distribution Chart ── -->
+      <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07);">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+          <i class="fa-solid fa-chart-pie" style="color:#FF9800;"></i> Class Risk Distribution
+        </h3>
+        <canvas id="riskChart" style="max-height:240px;"></canvas>
+      </div>
+    </div>
+
+    <!-- ── Classes Table ── -->
+    <div style="background:#fff; border-radius:14px; padding:1.4rem; box-shadow:0 3px 12px rgba(0,0,0,0.07); margin-top:1.5rem;" id="classesTableSection">
+      <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:#2d3436;">
+        <i class="fa-solid fa-table" style="color:#4CAF50;"></i> Class Metrics Overview
+      </h3>
+      <div style="overflow-x:auto;">
+        <table class="metrics-table" id="classesTable">
+          <thead>
+            <tr>
+              <th>Class Name</th>
+              <th>WMC</th>
+              <th>RFC</th>
+              <th>LCOM</th>
+              <th>CBO</th>
+              <th>DIT</th>
+              <th>Risk Level</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="classesTableBody">
+            <tr>
+              <td colspan="8" style="text-align:center; color:#999;">No data available</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════
+       SCRIPTS
+  ═══════════════════════════════════════ -->
+  <script>
+    let currentMetricsData = null;
+
+    // Load metrics on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadLatestMetrics();
+    });
+
+    // Run analysis
+    function runAnalysis() {
+      const btn = document.getElementById('runBtn');
+      const status = document.getElementById('analysisStatus');
+      const progress = document.getElementById('analysisProgress');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+      status.className = 'mood-badge mood-neutral';
+      status.textContent = 'Running...';
+      progress.style.display = 'block';
+
+      fetch('../php/metrics_run.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          status.className = 'mood-badge mood-happy';
+          status.textContent = 'Completed';
+          document.getElementById('lastAnalysisTime').textContent = data.timestamp;
+          loadLatestMetrics();
+        } else {
+          throw new Error(data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Analysis error:', error);
+        status.className = 'mood-badge mood-sad';
+        status.textContent = 'Failed';
+        alert('Analysis failed: ' + error.message);
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> Run Analysis';
+        progress.style.display = 'none';
+      });
+    }
+
+    // Load latest metrics
+    function loadLatestMetrics() {
+      fetch('../php/metrics_latest.php')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.data) {
+          currentMetricsData = data.data;
+          displayMetrics(data.data);
+        } else {
+          showNoData();
+        }
+      })
+      .catch(error => {
+        console.error('Load metrics error:', error);
+        showNoData();
+      });
+    }
+
+    // Display metrics data
+    function displayMetrics(data) {
+      document.getElementById('noDataMessage').style.display = 'none';
+      document.getElementById('metricsOverview').style.display = 'grid';
+      document.getElementById('chartsSection').style.display = 'grid';
+      document.getElementById('classesTableSection').style.display = 'block';
+
+      // Update overview cards
+      document.getElementById('totalClasses').textContent = data.total_classes;
+      document.getElementById('totalMethods').textContent = data.total_methods;
+      document.getElementById('avgComplexity').textContent = data.avg_complexity;
+      document.getElementById('highRiskClasses').textContent = data.high_risk_classes;
+
+      // Update last analysis time
+      document.getElementById('lastAnalysisTime').textContent = new Date(data.scan_date).toLocaleString();
+
+      // Render charts
+      renderWMCChart(data.json_results.classes);
+      renderRiskChart(data.json_results.classes);
+
+      // Render classes table
+      renderClassesTable(data.json_results.classes);
+    }
+
+    // Show no data state
+    function showNoData() {
+      document.getElementById('noDataMessage').style.display = 'block';
+      document.getElementById('metricsOverview').style.display = 'none';
+      document.getElementById('chartsSection').style.display = 'none';
+      document.getElementById('classesTableSection').style.display = 'none';
+    }
+
+    // Render WMC bar chart
+    function renderWMCChart(classes) {
+      const ctx = document.getElementById('wmcChart').getContext('2d');
+      const classNames = Object.keys(classes);
+      const wmcValues = classNames.map(name => classes[name].wmc);
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: classNames,
+          datasets: [{
+            label: 'WMC',
+            data: wmcValues,
+            backgroundColor: '#2196F3',
+            borderColor: '#1976D2',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Render risk distribution pie chart
+    function renderRiskChart(classes) {
+      const ctx = document.getElementById('riskChart').getContext('2d');
+      const riskCounts = { low: 0, medium: 0, high: 0 };
+
+      Object.values(classes).forEach(cls => {
+        const risk = cls.risk_level || 'low';
+        riskCounts[risk]++;
+      });
+
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+          datasets: [{
+            data: [riskCounts.low, riskCounts.medium, riskCounts.high],
+            backgroundColor: ['#4CAF50', '#FF9800', '#F44336'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    // Render classes table
+    function renderClassesTable(classes) {
+      const tbody = document.getElementById('classesTableBody');
+      tbody.innerHTML = '';
+
+      Object.entries(classes).forEach(([name, cls]) => {
+        const riskClass = `metrics-risk-${cls.risk_level || 'low'}`;
+        const riskText = (cls.risk_level || 'low').charAt(0).toUpperCase() + (cls.risk_level || 'low').slice(1);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${name}</td>
+          <td>${cls.wmc}</td>
+          <td>${cls.rfc}</td>
+          <td>${cls.lcom.toFixed(2)}</td>
+          <td>${cls.cbo}</td>
+          <td>${cls.dit}</td>
+          <td><span class="${riskClass}">${riskText}</span></td>
+          <td>
+            <button onclick="viewClassDetails('${name}')" class="btn btn-outline btn-sm">
+              <i class="fa-solid fa-eye"></i> Details
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // View class details (placeholder)
+    function viewClassDetails(className) {
+      if (!currentMetricsData) return;
+
+      const cls = currentMetricsData.json_results.classes[className];
+      if (!cls) return;
+
+      let details = `Class: ${className}\n\n`;
+      details += `File: ${cls.file}\n`;
+      details += `Methods: ${cls.num_methods}\n`;
+      details += `Attributes: ${cls.num_attributes}\n`;
+      details += `LOC: ${cls.loc}\n`;
+      details += `WMC: ${cls.wmc}\n`;
+      details += `Risk Level: ${cls.risk_level}\n\n`;
+
+      if (cls.evaluation) {
+        details += 'Issues:\n' + cls.evaluation.issues.map(i => `- ${i}`).join('\n') + '\n\n';
+        details += 'Suggestions:\n' + cls.evaluation.suggestions.map(s => `- ${s}`).join('\n');
+      }
+
+      alert(details);
+    }
+  </script>
+
+</body>
+</html>
